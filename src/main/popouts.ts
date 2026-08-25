@@ -1,7 +1,7 @@
 import { app, BrowserWindow, screen } from 'electron'
 import path from 'path'
-import Store from 'electron-store'
 import type { PanelState, PopoutBounds, PopoutState } from '../shared/types'
+import { safeStore } from './migrations'
 import type { StreamManager } from './stream/StreamManager'
 
 interface PopoutEntry {
@@ -39,7 +39,7 @@ function clampBounds(bounds: PopoutBounds | undefined): PopoutBounds {
  */
 export class PopoutManager {
   private entries = new Map<number, PopoutEntry>()
-  private boundsStore = new Store<Record<string, PopoutBounds>>({ name: 'popout-bounds' })
+  private boundsStore = safeStore<Record<string, PopoutBounds>>('popout-bounds')
 
   constructor(
     private stream: StreamManager,

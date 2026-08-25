@@ -22,8 +22,20 @@ export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.
         if (!accepted) throw new Error('Cancelled — key not stored.')
       }
       await invoke('keys:set', { provider: 'finnhub', key, allowPlaintext: plaintext })
-      const test = await invoke<{ valid: boolean }>('keys:test', { provider: 'finnhub' })
-      if (!test.valid) throw new Error('Finnhub rejected this key. Double-check it and try again.')
+      try {
+        const test = await invoke<{ valid: boolean }>('keys:test', { provider: 'finnhub' })
+        if (!test.valid) throw new Error('Finnhub rejected this key. Double-check it and try again.')
+      } catch (err) {
+        // Offline first run: the key is already stored — offer to continue unverified.
+        if ((err as Error).name === 'NETWORK') {
+          const keepAnyway = window.confirm(
+            "Can't reach Finnhub to verify the key right now (no network?). Save it anyway and verify later in SET?"
+          )
+          if (!keepAnyway) throw new Error('Key saved but unverified — retry when you are online.')
+          return
+        }
+        throw err
+      }
     },
     onSuccess: onDone,
     onError: (err: Error) => setError(err.message)

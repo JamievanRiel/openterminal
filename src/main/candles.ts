@@ -1,5 +1,5 @@
-import Store from 'electron-store'
 import type { Candle, CandleInterval, CandleResponse, ChartRange } from '../shared/types'
+import { safeStore } from './migrations'
 import { estimateBars, isIntraday, rangeStartMs } from '../shared/chart'
 import { classify } from '../shared/symbols'
 import type { AlpacaProvider } from './providers/alpaca'
@@ -38,7 +38,7 @@ const etDate = (epochSec: number): string =>
 export class CandleService implements CandleProvider {
   private memIntraday = new TtlCache<CandleResponse>(60_000, 60)
   private memDaily = new TtlCache<CandleResponse>(3600_000, 60)
-  private disk = new Store<{ entries: Record<string, DiskEntry> }>({ name: 'candles-cache' })
+  private disk = safeStore<{ entries: Record<string, DiskEntry> }>('candles-cache')
   private queue: QueueTask[] = []
   private running = false
   private seq = 0

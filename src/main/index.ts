@@ -1,7 +1,8 @@
 import { app, BrowserWindow, Menu, nativeImage, shell, Tray } from 'electron'
 import path from 'path'
-import Store from 'electron-store'
 import { registerIpc, type IpcServices } from './ipc'
+import { logger } from './logger'
+import { reportCorruptStores, safeStore } from './migrations'
 
 // Dev-only .env loading, guarded so packaged builds never touch dotenv.
 if (!app.isPackaged) {
@@ -13,7 +14,8 @@ if (!app.isPackaged) {
   }
 }
 
-const store = new Store<Record<string, unknown>>({ name: 'openterminal' })
+logger.hookConsole()
+const store = safeStore<Record<string, unknown>>('openterminal')
 let mainWindow: BrowserWindow | null = null
 let services: IpcServices | null = null
 
@@ -97,6 +99,20 @@ function createWindow(): void {
   mainWindow.once('ready-to-show', () => {
     // Start hidden only if the tray actually materializes; otherwise show normally.
     if (!(startHidden && ensureTray())) mainWindow?.show()
+    reportCorruptStores()
+  })
+
+  // Renderer crash: log + one automatic reload; a repeat gets a dialog.
+  let rendererReloads = 0
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[crash] renderer gone:', details.reason, details.exitCode)
+    if (details.reason === 'clean-exit') return
+    if (rendererReloads < 1 && mainWindow && !mainWindow.isDestroyed()) {
+      rendererReloads++
+      mainWindow.webContents.reload()
+    } else {
+      reportCrash('renderer crashed twice', new Error(details.reason))
+    }
   })
 
   // Dev-only: OT_SHOOT=<path> captures the window after 15s (README screenshots).
@@ -213,10 +229,25 @@ if (!gotLock) {
   })
 }
 
-// Main-process crash guard: log instead of dying on unexpected errors.
-process.on('uncaughtException', (err) => {
-  console.error('[main crash guard]', err)
-})
-process.on('unhandledRejection', (reason) => {
-  console.error('[main crash guard: rejection]', reason)
-})
+// Main-process crash guard: log + tell the user (throttled) instead of a silent exit.
+let lastCrashDialogAt = 0
+function reportCrash(kind: string, err: unknown): void {
+  console.error(`[crash] ${kind}:`, err)
+  if (!app.isReady() || Date.now() - lastCrashDialogAt < 60_000) return
+  lastCrashDialogAt = Date.now()
+  const { dialog, shell } = require('electron') as typeof import('electron')
+  void dialog
+    .showMessageBox({
+      type: 'error',
+      title: 'OpenTerminal — unexpected error',
+      message: 'OpenTerminal hit an internal error. It will keep running, but please report this.',
+      detail: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      buttons: ['Open logs folder', 'Dismiss'],
+      defaultId: 1
+    })
+    .then((r) => {
+      if (r.response === 0) void shell.openPath(logger.logsDir())
+    })
+}
+process.on('uncaughtException', (err) => reportCrash('uncaughtException', err))
+process.on('unhandledRejection', (reason) => reportCrash('unhandledRejection', reason))

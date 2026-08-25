@@ -80,6 +80,8 @@ export const INVOKE_CHANNELS = [
   'update:download',
   'update:install',
   'update:simulate',
+  'logs:open',
+  'diagnostics:export',
   'app:version'
 ] as const
 

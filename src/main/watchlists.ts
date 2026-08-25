@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto'
 import { writeFileSync } from 'fs'
 import { BrowserWindow, dialog } from 'electron'
-import Store from 'electron-store'
 import type { Watchlist } from '../shared/types'
+import { safeStore } from './migrations'
 
 const DEFAULT_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'ASML', 'TSLA', 'AMZN']
 
@@ -12,7 +12,7 @@ interface WatchlistFile {
 
 export class WatchlistManager {
   // Dedicated file (watchlists.json) so workspace/key data stays separate.
-  private store = new Store<WatchlistFile>({ name: 'watchlists' })
+  private store = safeStore<WatchlistFile>('watchlists')
 
   list(): Watchlist[] {
     let lists = this.store.get('lists')

@@ -2,13 +2,6 @@ import type { Filing, FilingsResult } from '../shared/types'
 import { DiskCache } from './diskcache'
 import { classifyStatus, ProviderError } from './providers/util'
 
-/**
- * SEC EDGAR requires a real contact in the User-Agent. Change this constant if
- * you distribute the app — it identifies the operator to the SEC, per their
- * fair-access policy (https://www.sec.gov/os/accessing-edgar-data).
- */
-const EDGAR_USER_AGENT = 'OpenTerminal/1.0 (contact: you@example.com)'
-
 const TICKER_MAP_URL = 'https://www.sec.gov/files/company_tickers.json'
 const MIN_REQUEST_GAP_MS = 350
 
@@ -21,15 +14,34 @@ export class EdgarService {
   private filingsCache = new DiskCache<FilingsResult>('edgar-filings', 6 * 3600_000, 60)
   private lastRequestAt = 0
 
+  /**
+   * SEC's fair-access policy requires a real operator contact in the
+   * User-Agent. The address comes from SET → Providers (no hardcoded default);
+   * without one, EDGAR calls politely refuse.
+   */
+  constructor(private getContact: () => string) {}
+
+  private userAgent(): string {
+    const contact = this.getContact().trim()
+    if (!contact) {
+      throw new ProviderError(
+        'NO_KEY',
+        'SEC EDGAR requires an operator contact e-mail (their fair-access policy). Add yours in SET → Providers.'
+      )
+    }
+    return `OpenTerminal/1.0 (contact: ${contact})`
+  }
+
   private async fetchJson<T>(url: string): Promise<T> {
+    const userAgent = this.userAgent()
     // Tiny per-host throttle on top of the caching — stay far below EDGAR's ceiling.
     const wait = this.lastRequestAt + MIN_REQUEST_GAP_MS - Date.now()
     if (wait > 0) await new Promise((r) => setTimeout(r, wait))
     this.lastRequestAt = Date.now()
-    console.log(`[edgar] GET ${url} (UA: ${EDGAR_USER_AGENT})`)
+    console.log(`[edgar] GET ${url} (UA: ${userAgent})`)
     let res: Response
     try {
-      res = await fetch(url, { headers: { 'User-Agent': EDGAR_USER_AGENT, Accept: 'application/json' } })
+      res = await fetch(url, { headers: { 'User-Agent': userAgent, Accept: 'application/json' } })
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching SEC EDGAR: ' + String(err))
     }

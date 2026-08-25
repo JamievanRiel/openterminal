@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { BrowserWindow, Notification } from 'electron'
-import Store from 'electron-store'
 import type { AlertLogEntry, AlertRule, AlertsState, StreamTick } from '../shared/types'
+import { safeStore } from './migrations'
 import type { ProviderRouter } from './providers/router'
 import type { StreamManager } from './stream/StreamManager'
 
@@ -23,7 +23,7 @@ interface AlertsFile {
  * relay isn't live.
  */
 export class AlertEngine {
-  private store = new Store<AlertsFile>({ name: 'alerts' })
+  private store = safeStore<AlertsFile>('alerts')
   private lastPrice = new Map<string, number>()
   private prevClose = new Map<string, number>()
   private subscribed = new Set<string>()

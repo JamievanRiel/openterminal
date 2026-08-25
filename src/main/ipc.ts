@@ -178,7 +178,9 @@ export function registerIpc(
   const watchlists = new WatchlistManager()
   const candles = new CandleService(twelvedata, alpaca)
   const fundamentals = new FundamentalsService(fmp)
-  const edgar = new EdgarService()
+  const edgar = new EdgarService(
+    () => ((store.get('appSettings') as { edgarContact?: string } | undefined)?.edgarContact ?? '')
+  )
   const portfolios = new PortfolioManager()
   const fred = new FredProvider(() => keys.getKey('fred'))
   const coingecko = new CoinGeckoProvider(() => keys.getKey('coingecko'))
@@ -665,7 +667,9 @@ export function registerIpc(
     trayMinimize: z.boolean().default(false),
     launchAtStartup: z.boolean().default(false),
     defaultWorkspace: z.string().max(24).nullable().default(null),
-    optEnabled: z.boolean().default(false)
+    optEnabled: z.boolean().default(false),
+    /** operator contact for the SEC EDGAR User-Agent — empty = EDGAR disabled */
+    edgarContact: z.string().trim().max(120).default('')
   })
   const linuxAutostartPath = (): string => path.join(homedir(), '.config', 'autostart', 'openterminal.desktop')
   const realAutoLaunchState = (): boolean => {
@@ -707,6 +711,36 @@ export function registerIpc(
     store.set('appSettings', p)
     if (p.launchAtStartup !== prev.launchAtStartup) applyAutoLaunch(p.launchAtStartup)
     return p
+  })
+  handle('logs:open', async () => {
+    const { shell } = await import('electron')
+    const { logger } = await import('./logger')
+    await shell.openPath(logger.logsDir())
+    return true
+  })
+  handle('diagnostics:export', async (payload) => {
+    const p = z.object({ includeTickers: z.boolean().default(true) }).parse(payload)
+    const { logger } = await import('./logger')
+    const { map, active } = migrateWorkspaces()
+    const workspaceShape = Object.fromEntries(
+      Object.entries(map).map(([name, ws]) => [
+        name,
+        ws.panels.map((panel) => (p.includeTickers ? `${panel.fn}:${panel.ticker ?? '-'}` : panel.fn))
+      ])
+    )
+    const diagnostics = {
+      generatedAt: new Date().toISOString(),
+      app: { name: 'OpenTerminal', version: app.getVersion() },
+      system: { platform: process.platform, arch: process.arch, electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node },
+      // Provider status only — NEVER key material.
+      providers: keys.status().map((s) => ({ provider: s.provider, configured: s.configured, encrypted: s.encrypted, fromEnv: s.fromEnv })),
+      rateLimits: rateLimits(),
+      caches: { disk: [...diskCacheStats(), { name: 'candles-cache', entries: candles.diskCount() }] },
+      activeWorkspace: active,
+      workspaces: workspaceShape,
+      lastLogLines: logger.lastLines(200)
+    }
+    return exportSvc.exportJson(getWindow(), 'openterminal-diagnostics.json', diagnostics)
   })
   handle('settings:cache-stats', () => ({
     disk: [...diskCacheStats(), { name: 'candles-cache', entries: candles.diskCount() }],

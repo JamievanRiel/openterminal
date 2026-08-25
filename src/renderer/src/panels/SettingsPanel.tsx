@@ -20,6 +20,7 @@ interface AppSettings {
   launchAtStartup: boolean
   defaultWorkspace: string | null
   optEnabled: boolean
+  edgarContact: string
 }
 
 function KeyRow({ status, encryptionAvailable }: { status: KeyStatus; encryptionAvailable: boolean }): JSX.Element {
@@ -115,6 +116,7 @@ export default function SettingsPanel(): JSX.Element {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'keys' | 'providers' | 'behavior' | 'appearance' | 'about'>('keys')
   const [message, setMessage] = useState('')
+  const [diagTickers, setDiagTickers] = useState(true)
   const rateLimits = useRateLimits()
 
   const statuses = useQuery({ queryKey: ['key-status'], queryFn: () => invoke<KeyStatus[]>('keys:status') })
@@ -215,6 +217,26 @@ export default function SettingsPanel(): JSX.Element {
                 ))}
               </tbody>
             </table>
+            {s && (
+              <div className="mt-4 max-w-md">
+                <div className="text-[10px] uppercase tracking-widest text-term-dim">SEC EDGAR contact</div>
+                <div className="mt-1 text-[10px] text-term-dim">
+                  EDGAR&apos;s fair-access policy requires an operator e-mail in every request. CACS stays disabled until this is set.
+                </div>
+                <input
+                  type="email"
+                  defaultValue={s.edgarContact}
+                  key={'edgar-' + s.edgarContact}
+                  placeholder="you@example.com"
+                  spellCheck={false}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim()
+                    if (v !== s.edgarContact) saveSettings({ ...s, edgarContact: v })
+                  }}
+                  className="mt-1 w-full border border-term-border bg-term-bg px-2 py-1 text-[11px] text-term-text placeholder-term-dim outline-none focus:border-term-amber"
+                />
+              </div>
+            )}
             <button
               className="mt-3 border border-term-down px-3 py-1 text-[10px] uppercase text-term-down hover:bg-[#1a0808]"
               onClick={() => {
@@ -340,6 +362,29 @@ export default function SettingsPanel(): JSX.Element {
               <li>SEC filings: EDGAR (sec.gov)</li>
             </ul>
             <p className="mt-2 text-[10px] uppercase text-term-dim">Not investment advice. Data may be delayed. Respect each provider&apos;s terms of service.</p>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                className="border border-term-border px-3 py-1 text-[10px] uppercase text-term-dim hover:text-term-amber"
+                onClick={() => void invoke('logs:open')}
+              >
+                Open logs folder
+              </button>
+              <button
+                className="border border-term-border px-3 py-1 text-[10px] uppercase text-term-dim hover:text-term-amber"
+                onClick={() =>
+                  void invoke<{ saved: boolean; path?: string }>('diagnostics:export', { includeTickers: diagTickers }).then((r) =>
+                    setMessage(r.saved ? `Diagnostics → ${r.path}` : 'Cancelled.')
+                  )
+                }
+              >
+                Export diagnostics
+              </button>
+              <label className="flex items-center gap-1 text-[9px] uppercase text-term-dim">
+                <input type="checkbox" checked={diagTickers} onChange={(e) => setDiagTickers(e.target.checked)} />
+                include tickers
+              </label>
+            </div>
+            <p className="mt-1 text-[9px] uppercase text-term-dim">Diagnostics contain provider status and log excerpts — never API keys.</p>
           </div>
         )}
       </div>

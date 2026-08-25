@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto'
 import { readFileSync, writeFileSync } from 'fs'
 import { BrowserWindow, dialog } from 'electron'
-import Store from 'electron-store'
 import { z } from 'zod'
+import { safeStore } from './migrations'
 import type { Portfolio } from '../shared/types'
 
 const SCHEMA_VERSION = 1
@@ -35,7 +35,7 @@ interface PortfolioFile {
 }
 
 export class PortfolioManager {
-  private store = new Store<PortfolioFile>({ name: 'portfolios' })
+  private store = safeStore<PortfolioFile>('portfolios')
 
   list(): Portfolio[] {
     let portfolios = this.store.get('portfolios')

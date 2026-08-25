@@ -1,4 +1,5 @@
-import Store from 'electron-store'
+import type Store from 'electron-store'
+import { safeStore } from './migrations'
 
 interface Entry<T> {
   value: T
@@ -31,7 +32,7 @@ export class DiskCache<T> {
     private ttlMs: number,
     private maxEntries = 60
   ) {
-    this.store = new Store({ name })
+    this.store = safeStore<{ entries: Record<string, Entry<T>> }>(name)
     diskRegistry.push(this as DiskCache<unknown>)
   }
 
