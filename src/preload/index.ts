@@ -6,6 +6,8 @@ const sendAllowed = new Set<string>(SEND_CHANNELS)
 const eventAllowed = new Set<string>(EVENT_CHANNELS)
 
 const api = {
+  /** 'darwin' | 'win32' | 'linux' — for platform-branched UI (title bar, shortcuts). */
+  platform: process.platform,
   invoke: (channel: string, payload?: unknown): Promise<unknown> => {
     if (!invokeAllowed.has(channel)) {
       return Promise.resolve({ ok: false, code: 'FORBIDDEN', message: 'Channel not allowed: ' + channel })

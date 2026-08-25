@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { isMod } from '../lib/platform'
 import type { SymbolHit } from '../../../shared/types'
 import { invoke } from '../lib/ipc'
 import { closestFunctions, FUNCTIONS, parseCommand } from '../lib/functions'
@@ -23,7 +24,7 @@ export default function CommandLine(): JSX.Element {
     const onKey = (event: KeyboardEvent): void => {
       const target = event.target as HTMLElement
       const typing = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
-      if ((event.key === '/' && !typing) || (event.ctrlKey && event.key.toLowerCase() === 'k')) {
+      if ((event.key === '/' && !typing) || (isMod(event) && event.key.toLowerCase() === 'k')) {
         event.preventDefault()
         inputRef.current?.focus()
         inputRef.current?.select()

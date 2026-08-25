@@ -1,5 +1,5 @@
 import type { OptionChain, OptionChainRow, OptionSide, OptionsExpiration } from '../../shared/types'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://api.polygon.io'
 
@@ -28,10 +28,8 @@ export class PolygonProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching Polygon: ' + String(err))
     }
-    if (res.status === 401) throw new ProviderError('BAD_KEY', 'Polygon rejected the API key.')
-    if (res.status === 403) throw new ProviderError('UNSUPPORTED', 'This Polygon plan does not include that endpoint.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Polygon returned 429 (rate limited).', 60_000)
-    if (!res.ok) throw new ProviderError('HTTP', 'Polygon HTTP ' + res.status)
+    const classified = classifyStatus('Polygon', res.status, res.status === 429 ? 60_000 : undefined)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 
@@ -148,7 +146,8 @@ export class PolygonProvider {
     const url = new URL(nextUrl)
     url.searchParams.set('apiKey', key)
     const res = await fetch(url)
-    if (!res.ok) throw new ProviderError('HTTP', 'Polygon HTTP ' + res.status)
+    const classified = classifyStatus('Polygon', res.status)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 }

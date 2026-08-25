@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import type { ChartSettings, PanelState } from '../../shared/types'
 import { invoke } from './lib/ipc'
@@ -91,10 +92,19 @@ function Empty(): JSX.Element {
  */
 export default function PopoutApp(): JSX.Element {
   const [panel, setPanel] = useState<PanelState | null>(null)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     void invoke<PanelState | null>('popout:init').then(setPanel).catch(() => undefined)
   }, [])
+
+  // Wake-from-sleep: this window has its own query cache — refresh it too.
+  useEffect(() => {
+    return window.terminal.on('system:resumed', () => {
+      void queryClient.invalidateQueries({ queryKey: ['quote'] })
+      void queryClient.invalidateQueries({ queryKey: ['candles'] })
+    })
+  }, [queryClient])
 
   // Link group: ticker changes anywhere propagate to this window.
   useEffect(() => {

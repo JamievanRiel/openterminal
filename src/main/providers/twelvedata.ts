@@ -1,6 +1,6 @@
 import type { Candle, CandleInterval, IntlIndexQuote, Quote } from '../../shared/types'
 import { toTwelveDataSymbol } from '../../shared/symbols'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://api.twelvedata.com'
 
@@ -53,9 +53,10 @@ export class TwelveDataProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching Twelve Data: ' + String(err))
     }
-    if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'Twelve Data rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Twelve Data returned 429 (rate limited).')
-    if (!res.ok) throw new ProviderError('HTTP', 'Twelve Data HTTP ' + res.status)
+    // Quirk: Twelve Data signals an invalid key with HTTP 401 only; plan gating
+    // arrives as 200 + {status:"error"} JSON handled below.
+    const classified = classifyStatus('Twelve Data', res.status)
+    if (classified) throw classified
     const body = (await res.json()) as T & { status?: string; code?: number; message?: string }
     // Twelve Data reports errors as 200 + {status:"error"} payloads.
     if (body && body.status === 'error') {

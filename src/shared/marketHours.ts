@@ -91,16 +91,28 @@ export function isOpen(now: Date = new Date()): boolean {
 export interface SessionTransition {
   /** state entered at the transition */
   next: UsSessionState
-  /** minutes from `now` until the transition (NY-local arithmetic; ±1h at DST changes) */
+  /** minutes from `now` until the transition (epoch-exact, DST-safe) */
   inMinutes: number
+}
+
+/**
+ * Epoch instant of the NY wall-clock `minute` on the NY day containing
+ * `probeInstant`. One refinement pass lands exactly even across the DST
+ * spring-forward/fall-back hours.
+ */
+function nyBoundaryEpoch(probeInstant: number, minute: number): number {
+  const probe = zonedParts(new Date(probeInstant), 'America/New_York')
+  let boundary = probeInstant + (minute - probe.minutes) * 60_000
+  const check = zonedParts(new Date(boundary), 'America/New_York')
+  boundary += (minute - check.minutes) * 60_000
+  return boundary
 }
 
 /** Next US session-state transition after `now`. */
 export function nextTransition(now: Date = new Date()): SessionTransition {
-  const p = zonedParts(now, 'America/New_York')
   for (let day = 0; day < 14; day++) {
-    // Probe each following NY day via UTC day offsets; zonedParts re-normalizes to NY.
-    const probe = day === 0 ? p : zonedParts(new Date(now.getTime() + day * 86_400_000), 'America/New_York')
+    const probeInstant = now.getTime() + day * 86_400_000
+    const probe = zonedParts(new Date(probeInstant), 'America/New_York')
     if (!isUsTradingDay(probe)) continue
     const close = usCloseMinute(probe)
     const boundaries: Array<[number, UsSessionState]> = [
@@ -110,11 +122,33 @@ export function nextTransition(now: Date = new Date()): SessionTransition {
       [POST_END, 'closed']
     ]
     for (const [minute, next] of boundaries) {
-      const delta = day === 0 ? minute - p.minutes : 1440 - p.minutes + (day - 1) * 1440 + minute
-      if (delta > 0) return { next, inMinutes: delta }
+      const deltaMin = Math.ceil((nyBoundaryEpoch(probeInstant, minute) - now.getTime()) / 60_000)
+      if (deltaMin > 0) return { next, inMinutes: deltaMin }
     }
   }
   return { next: 'pre', inMinutes: 24 * 60 }
+}
+
+/** Minutes until the market next ENTERS `target` state (e.g. exact time-to-open while closed). */
+export function minutesUntilState(target: UsSessionState, now: Date = new Date()): number {
+  for (let day = 0; day < 14; day++) {
+    const probeInstant = now.getTime() + day * 86_400_000
+    const probe = zonedParts(new Date(probeInstant), 'America/New_York')
+    if (!isUsTradingDay(probe)) continue
+    const close = usCloseMinute(probe)
+    const boundaries: Array<[number, UsSessionState]> = [
+      [PRE_START, 'pre'],
+      [OPEN, 'open'],
+      [close, 'post'],
+      [POST_END, 'closed']
+    ]
+    for (const [minute, next] of boundaries) {
+      if (next !== target) continue
+      const deltaMin = Math.ceil((nyBoundaryEpoch(probeInstant, minute) - now.getTime()) / 60_000)
+      if (deltaMin > 0) return deltaMin
+    }
+  }
+  return 24 * 60
 }
 
 // ---------------------------------------------------------------------------

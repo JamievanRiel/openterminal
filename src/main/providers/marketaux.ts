@@ -1,5 +1,5 @@
 import type { NewsItem } from '../../shared/types'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://api.marketaux.com/v1/news/all'
 
@@ -35,9 +35,8 @@ export class MarketauxProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching Marketaux: ' + String(err))
     }
-    if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'Marketaux rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Marketaux returned 429 (rate limited).')
-    if (!res.ok) throw new ProviderError('HTTP', 'Marketaux HTTP ' + res.status)
+    const classified = classifyStatus('Marketaux', res.status)
+    if (classified) throw classified
     const d = (await res.json()) as {
       data?: Array<{
         uuid?: string

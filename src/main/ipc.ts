@@ -680,10 +680,13 @@ export function registerIpc(
     if (process.platform === 'linux') {
       const file = linuxAutostartPath()
       if (enabled) {
+        // AppImage: process.execPath points inside the transient mount — the
+        // stable path is the APPIMAGE env var. deb installs use execPath directly.
+        const exec = process.env.APPIMAGE ?? process.execPath
         mkdirSync(path.dirname(file), { recursive: true })
         writeFileSync(
           file,
-          `[Desktop Entry]\nType=Application\nName=OpenTerminal\nExec="${process.execPath}" --hidden\nX-GNOME-Autostart-enabled=true\n`,
+          `[Desktop Entry]\nType=Application\nName=OpenTerminal\nExec="${exec}" --hidden\nX-GNOME-Autostart-enabled=true\n`,
           'utf8'
         )
       } else if (existsSync(file)) {

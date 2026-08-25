@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { invoke } from '../lib/ipc'
+import { isMod } from '../lib/platform'
 import { useWorkspace } from '../state/workspace'
 import ErrorBoundary from './ErrorBoundary'
 import DesPanel from '../panels/DesPanel'
@@ -29,7 +30,13 @@ import HmapPanel from '../panels/HmapPanel'
 import FxPanel from '../panels/FxPanel'
 import CrypPanel from '../panels/CrypPanel'
 
-function PanelContent({ fn, ticker, index }: { fn: string; ticker: string | null; index: number }): JSX.Element {
+/** Dev-only: verifies a render crash stays contained to one panel's boundary. */
+function Boom(): JSX.Element {
+  throw new Error('BOOM — intentional dev crash test')
+}
+
+export function PanelContent({ fn, ticker, index }: { fn: string; ticker: string | null; index: number }): JSX.Element {
+  if (import.meta.env.DEV && fn === 'BOOM') return <Boom />
   switch (fn) {
     case 'DES':
       return ticker ? <DesPanel ticker={ticker} /> : <PlaceholderPanel fn={fn} />
@@ -121,19 +128,19 @@ export default function PanelGrid(): JSX.Element {
         event.preventDefault()
         cycleActive()
       }
-      if (event.ctrlKey && event.key >= '1' && event.key <= '6' && !event.shiftKey) {
+      if (isMod(event) && event.key >= '1' && event.key <= '6' && !event.shiftKey) {
         const index = Number(event.key) - 1
         if (index < panels.length) {
           event.preventDefault()
           setActive(index)
         }
       }
-      // Ctrl+Shift+P: pop out the active panel · Ctrl+Shift+S: snapshot it.
-      if (event.ctrlKey && event.shiftKey && event.key.toUpperCase() === 'P') {
+      // Mod+Shift+P: pop out the active panel · Mod+Shift+S: snapshot it (Cmd on macOS).
+      if (isMod(event) && event.shiftKey && event.key.toUpperCase() === 'P') {
         event.preventDefault()
         popOutPanel(useWorkspace.getState().activePanel)
       }
-      if (event.ctrlKey && event.shiftKey && event.key.toUpperCase() === 'S') {
+      if (isMod(event) && event.shiftKey && event.key.toUpperCase() === 'S') {
         event.preventDefault()
         const idx = useWorkspace.getState().activePanel
         const panel = useWorkspace.getState().panels[idx]

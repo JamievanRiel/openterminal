@@ -1,6 +1,6 @@
 import type { EcoRelease, FredSeries } from '../../shared/types'
 import { DiskCache } from '../diskcache'
-import { ProviderError, TokenBucket } from './util'
+import { classifyStatus, ProviderError, TokenBucket } from './util'
 
 const BASE = 'https://api.stlouisfed.org/fred'
 
@@ -40,9 +40,10 @@ export class FredProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching FRED: ' + String(err))
     }
-    if (res.status === 400 || res.status === 403) throw new ProviderError('BAD_KEY', 'FRED rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'FRED returned 429 (rate limited).')
-    if (!res.ok) throw new ProviderError('HTTP', 'FRED HTTP ' + res.status)
+    // Quirk: FRED signals an invalid api_key with HTTP 400 — pre-map before classifying.
+    if (res.status === 400) throw new ProviderError('BAD_KEY', 'FRED rejected the API key.')
+    const classified = classifyStatus('FRED', res.status)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 

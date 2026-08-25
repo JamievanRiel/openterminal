@@ -97,6 +97,7 @@ export const EVENT_CHANNELS = [
   'alerts:open-log',
   'popout:returned',
   'link:ticker',
-  'update:status'
+  'update:status',
+  'system:resumed'
 ] as const
 export type EventChannel = (typeof EVENT_CHANNELS)[number]

@@ -27,23 +27,34 @@ function trayIcon(): Electron.NativeImage {
   return nativeImage.createFromDataURL(canvasPng)
 }
 
-function ensureTray(): void {
-  if (tray) return
-  tray = new Tray(trayIcon())
-  tray.setToolTip('OpenTerminal — alerts stay live')
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: 'Open OpenTerminal', click: () => mainWindow?.show() },
-      {
-        label: 'Quit',
-        click: () => {
-          quitting = true
-          app.quit()
+/** Returns false when the desktop has no tray support (some Linux DEs). */
+function ensureTray(): boolean {
+  if (tray) return true
+  try {
+    const icon = trayIcon()
+    // macOS menu-bar convention: template image adapts to light/dark menu bars.
+    if (process.platform === 'darwin') icon.setTemplateImage(true)
+    tray = new Tray(icon)
+    tray.setToolTip('OpenTerminal — alerts stay live')
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: 'Open OpenTerminal', click: () => mainWindow?.show() },
+        {
+          label: 'Quit',
+          click: () => {
+            quitting = true
+            app.quit()
+          }
         }
-      }
-    ])
-  )
-  tray.on('double-click', () => mainWindow?.show())
+      ])
+    )
+    tray.on('double-click', () => mainWindow?.show())
+    return true
+  } catch (err) {
+    console.error('[tray] tray unavailable on this desktop — hide-to-tray disabled:', err)
+    tray = null
+    return false
+  }
 }
 
 /** Pause the WS relay when every window is hidden/minimized; resume when any is visible. */
@@ -64,7 +75,11 @@ function createWindow(): void {
     y: saved?.y,
     minWidth: 1280,
     minHeight: 800,
-    frame: false,
+    // macOS keeps native traffic lights (inset) inside the custom title bar;
+    // Windows/Linux run fully frameless with custom controls.
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 10 } }
+      : { frame: false }),
     backgroundColor: '#000000',
     show: false,
     webPreferences: {
@@ -80,11 +95,8 @@ function createWindow(): void {
   const settings = store.get('appSettings') as { trayMinimize?: boolean } | undefined
   const startHidden = process.argv.includes('--hidden') && Boolean(settings?.trayMinimize)
   mainWindow.once('ready-to-show', () => {
-    if (startHidden) {
-      ensureTray()
-    } else {
-      mainWindow?.show()
-    }
+    // Start hidden only if the tray actually materializes; otherwise show normally.
+    if (!(startHidden && ensureTray())) mainWindow?.show()
   })
 
   // Dev-only: OT_SHOOT=<path> captures the window after 15s (README screenshots).
@@ -116,10 +128,12 @@ function createWindow(): void {
   mainWindow.on('close', (event) => {
     const settings = store.get('appSettings') as { trayMinimize?: boolean } | undefined
     if (!quitting && settings?.trayMinimize && mainWindow) {
-      event.preventDefault()
-      ensureTray()
-      mainWindow.hide()
-      syncStreamLifecycle()
+      // Only hide if a tray actually exists — otherwise the window would be unreachable.
+      if (ensureTray()) {
+        event.preventDefault()
+        mainWindow.hide()
+        syncStreamLifecycle()
+      }
     }
   })
   mainWindow.on('minimize', syncStreamLifecycle)
@@ -143,7 +157,8 @@ function createWindow(): void {
 
   const devUrl = process.env['ELECTRON_RENDERER_URL']
   if (devUrl) {
-    void mainWindow.loadURL(devUrl)
+    const suffix = process.env.OT_LEAKTEST ? '?leaktest=1' : ''
+    void mainWindow.loadURL(devUrl + suffix)
   } else {
     void mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
@@ -161,8 +176,33 @@ if (!gotLock) {
   })
 
   void app.whenReady().then(() => {
+    // macOS convention: About/Quit under the app menu with standard accelerators
+    // (Edit menu keeps Cmd+C/V working). Windows/Linux run menuless (frameless UI).
+    if (process.platform === 'darwin') {
+      Menu.setApplicationMenu(
+        Menu.buildFromTemplate([
+          { role: 'appMenu' },
+          { role: 'editMenu' },
+          { role: 'windowMenu' }
+        ])
+      )
+    } else {
+      Menu.setApplicationMenu(null)
+    }
+
     services = registerIpc(store, () => mainWindow)
     createWindow()
+
+    // Laptop sleep kills sockets and freezes timers; recover the moment we wake.
+    const { powerMonitor } = require('electron') as typeof import('electron')
+    powerMonitor.on('suspend', () => console.log('[power] system suspend'))
+    powerMonitor.on('resume', () => {
+      console.log('[power] system resume — recycling stream + refreshing renderers')
+      services?.stream.onSystemResume()
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send('system:resumed', Date.now())
+      }
+    })
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })

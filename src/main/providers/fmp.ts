@@ -1,5 +1,5 @@
 import type { Mover, MoversResult, ScreenerFilters, ScreenerResult, ScreenerRow } from '../../shared/types'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 export type MoversTab = 'gainers' | 'losers' | 'actives'
 
@@ -50,10 +50,8 @@ export class FmpProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching FMP: ' + String(err))
     }
-    if (res.status === 401) throw new ProviderError('BAD_KEY', 'FMP rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'FMP returned 429 (rate limited).')
-    if (res.status === 403 || res.status === 404) throw new ProviderError('UNSUPPORTED', 'FMP endpoint not available: HTTP ' + res.status)
-    if (!res.ok) throw new ProviderError('HTTP', 'FMP HTTP ' + res.status)
+    const classified = classifyStatus('FMP', res.status)
+    if (classified) throw classified
     const body = (await res.json()) as unknown
     if (!Array.isArray(body)) throw new ProviderError('HTTP', 'FMP returned an unexpected payload.')
     return body as FmpRow[]
@@ -79,13 +77,9 @@ export class FmpProvider {
       } catch (err) {
         throw new ProviderError('NETWORK', 'Network error reaching FMP: ' + String(err))
       }
-      if (res.status === 401) throw new ProviderError('BAD_KEY', 'FMP rejected the API key.')
-      if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'FMP returned 429 (rate limited).')
-      // 402 = endpoint is premium on this plan; 403/404 = endpoint gone. Either way, try the sibling endpoint.
-      if (res.status === 402 || res.status === 403 || res.status === 404) {
-        throw new ProviderError('UNSUPPORTED', 'FMP endpoint not available on this plan: HTTP ' + res.status)
-      }
-      if (!res.ok) throw new ProviderError('HTTP', 'FMP HTTP ' + res.status)
+      // 402/403/404 all classify as UNSUPPORTED, which triggers the stable↔v3 sibling fallback below.
+      const classified = classifyStatus('FMP', res.status)
+      if (classified) throw classified
       return (await res.json()) as T
     }
     try {

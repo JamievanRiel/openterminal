@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { nextTransition, usSessionState } from '../../../shared/marketHours'
+import { minutesUntilState, nextTransition, usSessionState } from '../../../shared/marketHours'
 import type { AlertsState, UpdateStatus } from '../../../shared/types'
 import { invoke } from '../lib/ipc'
 import { useRateLimits, useStreamState } from '../lib/live'
@@ -85,9 +85,8 @@ export default function StatusBar(): JSX.Element {
       marketClass = 'text-term-amber'
       break
     default: {
-      // Countdown to the next regular open, not merely the next pre-market boundary.
-      const toOpen = transition.next === 'open' ? transition.inMinutes : transition.inMinutes + 330
-      marketLabel = `US CLOSED — OPENS IN ${fmtCountdown(toOpen)}`
+      // Exact countdown to the next regular open (DST-safe), not the pre-market boundary.
+      marketLabel = `US CLOSED — OPENS IN ${fmtCountdown(minutesUntilState('open', now))}`
       marketClass = 'text-term-down'
     }
   }

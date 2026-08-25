@@ -134,6 +134,26 @@ export class StreamManager {
     this.evaluate()
   }
 
+  /**
+   * System woke from sleep: the socket is almost certainly dead but may not
+   * have emitted 'close' yet. Recycle it immediately instead of waiting for
+   * the 60s heartbeat, and restart the backoff ladder.
+   */
+  onSystemResume(): void {
+    console.log('[stream] system resumed — forcing connection health check')
+    this.backoffMs = 1_000
+    if (this.ws) {
+      try {
+        this.ws.terminate() // close handler schedules the reconnect
+      } catch {
+        this.ws = null
+        this.evaluate()
+      }
+    } else {
+      this.evaluate()
+    }
+  }
+
   // ------------------------------------------------------------ connection
 
   /** Decide whether we should be connected right now, and converge on it. */

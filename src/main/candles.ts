@@ -48,6 +48,8 @@ export class CandleService implements CandleProvider {
     private alpaca: AlpacaProvider
   ) {}
 
+  private pendingFetches = new Map<string, Promise<CandleResponse>>()
+
   async getCandles(symbol: string, interval: CandleInterval, range: ChartRange, priority: boolean): Promise<CandleResponse> {
     const key = `${symbol}:${interval}:${range}`
     const mem = this.memCache(interval).get(key)
@@ -60,7 +62,14 @@ export class CandleService implements CandleProvider {
       }
     }
 
-    return this.enqueue(priority, () => this.fetch(key, symbol, interval, range))
+    // Coalesce concurrent identical requests (e.g. GP + HP on the same key) into one fetch.
+    const pending = this.pendingFetches.get(key)
+    if (pending) return pending
+    const promise = this.enqueue(priority, () => this.fetch(key, symbol, interval, range)).finally(() =>
+      this.pendingFetches.delete(key)
+    )
+    this.pendingFetches.set(key, promise)
+    return promise
   }
 
   /** SET → clear caches. */

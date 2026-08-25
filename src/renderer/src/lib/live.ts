@@ -65,6 +65,13 @@ export function cryptoTicking(): boolean {
   return Date.now() - lastCryptoTickAt < 120_000
 }
 
+/** Dev leak-harness introspection: current listener footprint of the live store. */
+export function liveDebugCounts(): { symbolsWithListeners: number; totalListeners: number } {
+  let total = 0
+  for (const set of symbolListeners.values()) total += set.size
+  return { symbolsWithListeners: symbolListeners.size, totalListeners: total }
+}
+
 let subscriberSeq = 0
 
 /**
@@ -96,6 +103,8 @@ export function useLiveTick(symbol: string | null): LiveTick | undefined {
       set.add(onChange)
       return () => {
         set?.delete(onChange)
+        // Prune empty sets so the listener map can't grow with symbol churn.
+        if (set && set.size === 0) symbolListeners.delete(symbol)
       }
     },
     () => (symbol ? prices.get(symbol) : undefined)

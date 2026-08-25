@@ -1,5 +1,5 @@
 import type { Candle, CandleInterval, Quote } from '../../shared/types'
-import { ProviderError, TtlCache } from './util'
+import { classifyStatus, ProviderError, TtlCache } from './util'
 
 const BASE = 'https://data.alpaca.markets/v2'
 
@@ -75,9 +75,10 @@ export class AlpacaProvider {
       } catch (err) {
         throw new ProviderError('NETWORK', 'Network error reaching Alpaca: ' + String(err))
       }
-      if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'Alpaca rejected the API key.')
-      if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Alpaca returned 429 (rate limited).')
-      if (!res.ok) throw new ProviderError('HTTP', 'Alpaca HTTP ' + res.status)
+      // Quirk: Alpaca answers 403 (not 401) for bad credentials — pre-map before classifying.
+      if (res.status === 403) throw new ProviderError('BAD_KEY', 'Alpaca rejected the API key.')
+      const classifiedBars = classifyStatus('Alpaca', res.status)
+      if (classifiedBars) throw classifiedBars
       const d = (await res.json()) as {
         bars?: Array<{ t: string; o: number; h: number; l: number; c: number; v: number }>
         next_page_token?: string | null
@@ -104,10 +105,10 @@ export class AlpacaProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching Alpaca: ' + String(err))
     }
-    if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'Alpaca rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Alpaca returned 429 (rate limited).')
-    if (res.status === 404) throw new ProviderError('UNSUPPORTED', 'Alpaca has no data for ' + symbol)
-    if (!res.ok) throw new ProviderError('HTTP', 'Alpaca HTTP ' + res.status)
+    // Quirk: Alpaca answers 403 (not 401) for bad credentials — pre-map before classifying.
+    if (res.status === 403) throw new ProviderError('BAD_KEY', 'Alpaca rejected the API key.')
+    const classified = classifyStatus('Alpaca', res.status)
+    if (classified) throw classified
     const d = (await res.json()) as Snapshot
     const last = d.latestTrade?.p ?? d.dailyBar?.c
     const prevClose = d.prevDailyBar?.c

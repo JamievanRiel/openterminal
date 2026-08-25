@@ -1,6 +1,6 @@
 import type { Filing, FilingsResult } from '../shared/types'
 import { DiskCache } from './diskcache'
-import { ProviderError } from './providers/util'
+import { classifyStatus, ProviderError } from './providers/util'
 
 /**
  * SEC EDGAR requires a real contact in the User-Agent. Change this constant if
@@ -33,11 +33,10 @@ export class EdgarService {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching SEC EDGAR: ' + String(err))
     }
-    if (res.status === 429 || res.status === 403) {
-      throw new ProviderError('RATE_LIMITED', 'SEC EDGAR throttled the request — try again shortly.')
-    }
-    if (res.status === 404) throw new ProviderError('UNSUPPORTED', 'Not found on SEC EDGAR.')
-    if (!res.ok) throw new ProviderError('HTTP', 'SEC EDGAR HTTP ' + res.status)
+    // Quirk: EDGAR uses 403 for fair-access throttling (no API keys exist) — pre-map before classifying.
+    if (res.status === 403) throw new ProviderError('RATE_LIMITED', 'SEC EDGAR throttled the request — try again shortly.')
+    const classified = classifyStatus('SEC EDGAR', res.status)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 

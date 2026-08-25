@@ -9,7 +9,7 @@ import type {
   Quote,
   SymbolHit
 } from '../../shared/types'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://finnhub.io/api/v1'
 
@@ -47,9 +47,8 @@ export class FinnhubProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching Finnhub: ' + String(err))
     }
-    if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'Finnhub rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'Finnhub returned 429 (rate limited).')
-    if (!res.ok) throw new ProviderError('HTTP', 'Finnhub HTTP ' + res.status)
+    const classified = classifyStatus('Finnhub', res.status)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 
@@ -261,7 +260,7 @@ export class FinnhubProvider {
       const bull = d.sentiment?.bullishPercent
       return typeof bull === 'number' ? bull * 2 - 1 : null
     } catch (err) {
-      if (err instanceof ProviderError && (err.code === 'BAD_KEY' || err.code === 'HTTP')) {
+      if (err instanceof ProviderError && ['BAD_KEY', 'UNSUPPORTED', 'HTTP'].includes(err.code)) {
         this.sentimentBlocked = true
         if (!this.sentimentLogged) {
           this.sentimentLogged = true
@@ -283,7 +282,7 @@ export class FinnhubProvider {
         .filter((e): e is { event: string; time: string } => Boolean(e.event && e.time))
         .slice(0, 100)
     } catch (err) {
-      if (err instanceof ProviderError && (err.code === 'BAD_KEY' || err.code === 'HTTP')) {
+      if (err instanceof ProviderError && ['BAD_KEY', 'UNSUPPORTED', 'HTTP'].includes(err.code)) {
         this.ecoCalendarBlocked = true
         console.log('[finnhub] economic calendar not available on this plan — using FRED release dates instead')
         return null

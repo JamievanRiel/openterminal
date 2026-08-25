@@ -38,10 +38,31 @@ export default function App(): JSX.Element {
     return window.terminal.on('link:ticker', (payload) => loadTicker(payload as string))
   }, [loadTicker])
 
+  // System woke from sleep: quotes/candles are stale — refetch what's visible.
+  useEffect(() => {
+    return window.terminal.on('system:resumed', () => {
+      void queryClient.invalidateQueries({ queryKey: ['quote'] })
+      void queryClient.invalidateQueries({ queryKey: ['candles'] })
+      void queryClient.invalidateQueries({ queryKey: ['fx-pairs'] })
+      void queryClient.invalidateQueries({ queryKey: ['crypto-markets'] })
+    })
+  }, [queryClient])
+
   // Apply the persisted UI scale (SET → Appearance) once at boot.
   useEffect(() => {
     const root = document.getElementById('root') as HTMLElement
     root.style.zoom = window.localStorage.getItem('ui-scale') === 'M' ? '1.12' : '1'
+  }, [])
+
+  // Dev leak harness: OT_LEAKTEST=1 npm run dev → ?leaktest=1.
+  useEffect(() => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('leaktest')) {
+      const id = window.setTimeout(() => {
+        void import('./lib/devHarness').then((m) => m.runLeakHarness())
+      }, 8000)
+      return () => window.clearTimeout(id)
+    }
+    return undefined
   }, [])
 
   const keyStatus = useQuery({

@@ -1,5 +1,5 @@
 import type { CryptoDetail, CryptoMarkets, CryptoMarketRow } from '../../shared/types'
-import { ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://api.coingecko.com/api/v3'
 
@@ -24,9 +24,8 @@ export class CoinGeckoProvider {
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching CoinGecko: ' + String(err))
     }
-    if (res.status === 401 || res.status === 403) throw new ProviderError('BAD_KEY', 'CoinGecko rejected the API key.')
-    if (res.status === 429) throw new ProviderError('RATE_LIMITED', 'CoinGecko returned 429 (rate limited).', 60_000)
-    if (!res.ok) throw new ProviderError('HTTP', 'CoinGecko HTTP ' + res.status)
+    const classified = classifyStatus('CoinGecko', res.status, res.status === 429 ? 60_000 : undefined)
+    if (classified) throw classified
     return (await res.json()) as T
   }
 

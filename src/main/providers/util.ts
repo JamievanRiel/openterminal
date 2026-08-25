@@ -1,3 +1,28 @@
+/**
+ * THE HTTP-status classifier for every provider adapter — no adapter-local
+ * ad-hoc checks. Outcomes per class:
+ *   401        → BAD_KEY      (key invalid — surfaces in SET key status)
+ *   402/403    → UNSUPPORTED  (plan-gated — honest "not on this plan" state)
+ *   404        → UNSUPPORTED  (no such data — panels show their empty state)
+ *   429        → RATE_LIMITED (bucket/backoff, optional retryAfterMs)
+ *   other !ok  → HTTP
+ * Returns null for 2xx.
+ */
+export function classifyStatus(
+  provider: string,
+  status: number,
+  retryAfterMs?: number
+): ProviderError | null {
+  if (status >= 200 && status < 300) return null
+  if (status === 401) return new ProviderError('BAD_KEY', `${provider} rejected the API key.`)
+  if (status === 402 || status === 403) {
+    return new ProviderError('UNSUPPORTED', `${provider}: this endpoint is not available on the current plan (HTTP ${status}).`)
+  }
+  if (status === 404) return new ProviderError('UNSUPPORTED', `${provider}: no data found (HTTP 404).`)
+  if (status === 429) return new ProviderError('RATE_LIMITED', `${provider} returned 429 (rate limited).`, retryAfterMs)
+  return new ProviderError('HTTP', `${provider} HTTP ${status}`)
+}
+
 export class ProviderError extends Error {
   constructor(
     public code: 'NO_KEY' | 'BAD_KEY' | 'RATE_LIMITED' | 'HTTP' | 'NETWORK' | 'UNSUPPORTED',
