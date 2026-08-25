@@ -35,16 +35,36 @@ export class ProviderError extends Error {
   }
 }
 
+export interface BucketPersistence {
+  load: () => { tokens: number; lastRefill: number } | null
+  save: (state: { tokens: number; lastRefill: number }) => void
+}
+
 /** Token bucket matching a provider's free-tier rate limit. */
 export class TokenBucket {
   private tokens: number
   private lastRefill = Date.now()
+  private persistence: BucketPersistence | null = null
 
   constructor(
     private capacity: number,
     private refillWindowMs: number
   ) {
     this.tokens = capacity
+  }
+
+  /**
+   * Persist bucket state across restarts (day-quota buckets like FMP's
+   * 250/day must not reset on relaunch). Loads immediately, saves on take.
+   */
+  setPersistence(persistence: BucketPersistence): void {
+    this.persistence = persistence
+    const saved = persistence.load()
+    if (saved && Number.isFinite(saved.tokens) && Number.isFinite(saved.lastRefill) && saved.lastRefill <= Date.now()) {
+      this.tokens = Math.max(0, Math.min(this.capacity, saved.tokens))
+      this.lastRefill = saved.lastRefill
+      this.refill() // credit elapsed downtime
+    }
   }
 
   private refill(): void {
@@ -60,6 +80,7 @@ export class TokenBucket {
     this.refill()
     if (this.tokens >= 1) {
       this.tokens -= 1
+      this.persistence?.save({ tokens: this.tokens, lastRefill: this.lastRefill })
       return true
     }
     return false

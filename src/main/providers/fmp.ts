@@ -13,6 +13,11 @@ export function fmpBucketStatus(): { remaining: number; capacity: number } {
   return bucket.status()
 }
 
+/** The 250/day quota must survive restarts — ipc wires an electron-store here. */
+export function attachFmpBucketPersistence(persistence: import('./util').BucketPersistence): void {
+  bucket.setPersistence(persistence)
+}
+
 // FMP moved from /api/v3 to /stable; newer free keys only work on /stable, older ones on /v3.
 const ENDPOINTS: Record<MoversTab, { stable: string; v3: string }> = {
   gainers: {

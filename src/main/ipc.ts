@@ -16,7 +16,7 @@ import type {
 import { KeyManager } from './keys'
 import { FinnhubProvider, finnhubBucketStatus } from './providers/finnhub'
 import { TwelveDataProvider, twelvedataBucketStatus } from './providers/twelvedata'
-import { FmpProvider, fmpBucketStatus } from './providers/fmp'
+import { attachFmpBucketPersistence, FmpProvider, fmpBucketStatus } from './providers/fmp'
 import { AlpacaProvider } from './providers/alpaca'
 import { ProviderRouter } from './providers/router'
 import { ProviderError } from './providers/util'
@@ -174,6 +174,10 @@ export function registerIpc(
   const fmp = new FmpProvider(() => keys.getKey('fmp'))
   const alpaca = new AlpacaProvider(() => keys.getKey('alpaca'))
   const marketaux = new MarketauxProvider(() => keys.getKey('marketaux'))
+  attachFmpBucketPersistence({
+    load: () => (store.get('fmpBucket') as { tokens: number; lastRefill: number } | undefined) ?? null,
+    save: (state) => store.set('fmpBucket', state)
+  })
   const router = new ProviderRouter(finnhub, alpaca, twelvedata)
   const watchlists = new WatchlistManager()
   const candles = new CandleService(twelvedata, alpaca)

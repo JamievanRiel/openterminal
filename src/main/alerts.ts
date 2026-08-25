@@ -2,11 +2,11 @@ import { randomUUID } from 'crypto'
 import { BrowserWindow, Notification } from 'electron'
 import type { AlertLogEntry, AlertRule, AlertsState, StreamTick } from '../shared/types'
 import { safeStore } from './migrations'
+import { evaluateAlertRule } from './alertLogic'
 import type { ProviderRouter } from './providers/router'
 import type { StreamManager } from './stream/StreamManager'
 
 const ALERT_WC_ID = -1 // synthetic webContents id for the engine's relay subscriptions
-const REPEAT_DEBOUNCE_MS = 5 * 60_000
 const REST_SWEEP_MS = 60_000
 const MAX_LOG = 200
 
@@ -137,38 +137,17 @@ export class AlertEngine {
     const rules = this.rules()
     let dirty = false
     for (const rule of rules) {
-      if (!rule.enabled || rule.symbol !== symbol) continue
-      if (!rule.repeating && rule.fired) continue
-
-      let triggered = false
-      let message = ''
-      if (rule.condition === 'above') {
-        // Fire on the cross, not while merely sitting above the level.
-        triggered = price >= rule.value && (prev === undefined || prev < rule.value)
-        message = `${symbol} ${price.toFixed(2)} ▲ crossed above ${rule.value.toFixed(2)}`
-      } else if (rule.condition === 'below') {
-        triggered = price <= rule.value && (prev === undefined || prev > rule.value)
-        message = `${symbol} ${price.toFixed(2)} ▼ crossed below ${rule.value.toFixed(2)}`
-      } else {
-        const pc = this.prevClose.get(symbol)
-        if (pc === undefined) {
-          void this.primePrevClose(symbol)
-          continue
-        }
-        if (pc !== 0) {
-          const movePct = ((price - pc) / pc) * 100
-          const prevMove = prev !== undefined ? ((prev - pc) / pc) * 100 : undefined
-          triggered = Math.abs(movePct) >= rule.value && (prevMove === undefined || Math.abs(prevMove) < rule.value)
-          message = `${symbol} moved ${movePct >= 0 ? '▲' : '▼'} ${movePct.toFixed(2)}% today (threshold ±${rule.value}%)`
-        }
+      if (rule.symbol !== symbol) continue
+      if (rule.condition === 'move' && !this.prevClose.has(symbol)) {
+        void this.primePrevClose(symbol)
+        continue
       }
-      if (!triggered) continue
-      if (rule.repeating && rule.lastFiredAt !== null && Date.now() - rule.lastFiredAt < REPEAT_DEBOUNCE_MS) continue
-
+      const result = evaluateAlertRule(rule, price, prev, this.prevClose.get(symbol), Date.now())
+      if (!result.fire) continue
       rule.lastFiredAt = Date.now()
       if (!rule.repeating) rule.fired = true
       dirty = true
-      this.fire(rule, message)
+      this.fire(rule, result.message)
     }
     if (dirty) this.store.set('rules', rules)
   }
