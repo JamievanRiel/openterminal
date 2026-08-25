@@ -1,0 +1,78 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { invoke } from '../lib/ipc'
+
+export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.Element {
+  const [key, setKey] = useState('')
+  const [error, setError] = useState('')
+
+  const encryption = useQuery({
+    queryKey: ['encryption-available'],
+    queryFn: () => invoke<boolean>('keys:encryption-available')
+  })
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const plaintext = encryption.data === false
+      if (plaintext) {
+        const accepted = window.confirm(
+          'OS keychain encryption is unavailable (on Linux this needs gnome-keyring or kwallet). ' +
+            'Your key would be stored in PLAINTEXT on disk. Continue?'
+        )
+        if (!accepted) throw new Error('Cancelled — key not stored.')
+      }
+      await invoke('keys:set', { provider: 'finnhub', key, allowPlaintext: plaintext })
+      const test = await invoke<{ valid: boolean }>('keys:test', { provider: 'finnhub' })
+      if (!test.valid) throw new Error('Finnhub rejected this key. Double-check it and try again.')
+    },
+    onSuccess: onDone,
+    onError: (err: Error) => setError(err.message)
+  })
+
+  return (
+    <div className="flex flex-1 items-center justify-center bg-term-bg">
+      <div className="w-[480px] border border-term-border bg-term-panel p-6">
+        <div className="font-mono text-[16px] font-bold uppercase tracking-widest text-term-amber">
+          Welcome to OpenTerminal
+        </div>
+        <div className="mt-2 font-mono text-[11px] leading-relaxed text-term-text">
+          To load market data, add your free Finnhub API key. Register at finnhub.io, copy the key, and
+          paste it below. It is validated with a test call and stored{' '}
+          {encryption.data === false ? 'on disk (keychain unavailable)' : 'encrypted with your OS keychain'}.
+          Keys for Twelve Data, FMP and FRED can be added later in SET.
+        </div>
+        <input
+          type="password"
+          value={key}
+          onChange={(event) => {
+            setKey(event.target.value)
+            setError('')
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && key.trim().length >= 4) save.mutate()
+          }}
+          placeholder="FINNHUB API KEY"
+          spellCheck={false}
+          autoFocus
+          className="mt-4 w-full border border-term-border bg-term-bg px-3 py-2 font-mono text-[12px] text-term-amber placeholder-term-dim outline-none focus:border-term-amber"
+        />
+        {error && <div className="mt-2 font-mono text-[10px] uppercase text-term-down">{error}</div>}
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            className="font-mono text-[10px] uppercase text-term-dim hover:text-term-text"
+            onClick={onDone}
+          >
+            Skip for now
+          </button>
+          <button
+            disabled={key.trim().length < 4 || save.isPending}
+            onClick={() => save.mutate()}
+            className="border border-term-amber px-4 py-1.5 font-mono text-[11px] uppercase text-term-amber hover:bg-term-amber hover:text-black disabled:opacity-40"
+          >
+            {save.isPending ? 'Validating…' : 'Validate & save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

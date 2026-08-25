@@ -1,0 +1,79 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import type { KeyStatus } from '../../shared/types'
+import { invoke } from './lib/ipc'
+import { useWorkspace } from './state/workspace'
+import TitleBar from './components/TitleBar'
+import TickerTape from './components/TickerTape'
+import CommandLine from './components/CommandLine'
+import PanelGrid from './components/PanelGrid'
+import StatusBar from './components/StatusBar'
+import FirstRunWizard from './components/FirstRunWizard'
+
+export default function App(): JSX.Element {
+  const queryClient = useQueryClient()
+  const [skippedWizard, setSkippedWizard] = useState(false)
+  const hydrated = useWorkspace((s) => s.hydrated)
+  const hydrate = useWorkspace((s) => s.hydrate)
+
+  useEffect(() => {
+    void hydrate()
+  }, [hydrate])
+
+  // OS alert-notification click focuses the app and opens the alert log.
+  const applyCommand = useWorkspace((s) => s.applyCommand)
+  useEffect(() => {
+    return window.terminal.on('alerts:open-log', () => applyCommand('ALRT', null, false))
+  }, [applyCommand])
+
+  // Pop-out window closed → its panel returns to the grid.
+  const addPanel = useWorkspace((s) => s.addPanel)
+  useEffect(() => {
+    return window.terminal.on('popout:returned', (payload) => addPanel(payload as never))
+  }, [addPanel])
+
+  // Link-group ticker changed in another window → follow in the active panel.
+  const loadTicker = useWorkspace((s) => s.loadTicker)
+  useEffect(() => {
+    return window.terminal.on('link:ticker', (payload) => loadTicker(payload as string))
+  }, [loadTicker])
+
+  // Apply the persisted UI scale (SET → Appearance) once at boot.
+  useEffect(() => {
+    const root = document.getElementById('root') as HTMLElement
+    root.style.zoom = window.localStorage.getItem('ui-scale') === 'M' ? '1.12' : '1'
+  }, [])
+
+  const keyStatus = useQuery({
+    queryKey: ['key-status'],
+    queryFn: () => invoke<KeyStatus[]>('keys:status')
+  })
+
+  const finnhubReady = keyStatus.data?.find((k) => k.provider === 'finnhub')?.configured ?? false
+  const booting = keyStatus.isLoading || !hydrated
+
+  return (
+    <div className="flex h-full flex-col bg-term-bg text-term-text">
+      <TitleBar />
+      {booting ? (
+        <div className="flex flex-1 items-center justify-center font-mono text-[12px] uppercase tracking-widest text-term-amber">
+          OpenTerminal — booting…
+        </div>
+      ) : !finnhubReady && !skippedWizard ? (
+        <FirstRunWizard
+          onDone={() => {
+            setSkippedWizard(true)
+            void queryClient.invalidateQueries({ queryKey: ['key-status'] })
+          }}
+        />
+      ) : (
+        <>
+          <TickerTape />
+          <CommandLine />
+          <PanelGrid />
+          <StatusBar />
+        </>
+      )}
+    </div>
+  )
+}

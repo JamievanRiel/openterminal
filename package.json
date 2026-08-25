@@ -1,0 +1,87 @@
+{
+  "name": "openterminal",
+  "version": "1.0.0",
+  "description": "OpenTerminal — keyboard-first, multi-panel market terminal (Bloomberg-style)",
+  "main": "./out/main/index.js",
+  "author": "OpenTerminal",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.9",
+    "ws": "^8.21.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.51.1",
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "electron": "^31.7.7",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^2.3.0",
+    "lightweight-charts": "^4.1.4",
+    "postcss": "^8.4.39",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3",
+    "vitest": "^4.1.11",
+    "zustand": "^4.5.4"
+  },
+  "build": {
+    "appId": "com.openterminal.app",
+    "productName": "OpenTerminal",
+    "asar": true,
+    "files": [
+      "out/**/*",
+      "!**/*.map"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "artifactName": "OpenTerminal-${version}-${os}-${arch}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "openterminal",
+      "repo": "openterminal"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "OpenTerminal-${version}-win-${arch}.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "category": "public.app-category.finance"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Finance"
+    }
+  }
+}

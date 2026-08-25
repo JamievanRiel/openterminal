@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  user-select: none;
+}
+
+* {
+  border-radius: 0 !important;
+}
+
+/* The one sanctioned circle: exchange open/closed dots. */
+.dot {
+  border-radius: 50% !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Ticker tape marquee — GPU-composited transform only */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.marquee {
+  animation: marquee 60s linear infinite;
+  will-change: transform;
+}
+.marquee.paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}
+
+/* Price tick flash */
+@keyframes flash-up {
+  0% {
+    background-color: rgba(0, 200, 83, 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes flash-down {
+  0% {
+    background-color: rgba(255, 23, 68, 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.flash-up {
+  animation: flash-up 200ms ease-out;
+}
+.flash-down {
+  animation: flash-down 200ms ease-out;
+}
+
+/* New-article slide-in with a brief amber highlight */
+@keyframes news-in {
+  0% {
+    transform: translateY(-4px);
+    background-color: rgba(255, 152, 0, 0.18);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    background-color: transparent;
+  }
+}
+.news-new {
+  animation: news-in 900ms ease-out;
+}
