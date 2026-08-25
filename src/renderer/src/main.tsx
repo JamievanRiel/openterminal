@@ -7,6 +7,13 @@ import './styles/index.css'
 
 const isPopout = new URLSearchParams(window.location.search).has('popout')
 
+// Chromium fires this benign notice when an observed element resizes twice in
+// one frame (lightweight-charts autoSize does this by design). Filter the
+// noise so real errors stand out in logs.
+window.addEventListener('error', (event) => {
+  if (event.message?.includes('ResizeObserver loop')) event.stopImmediatePropagation()
+})
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

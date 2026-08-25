@@ -55,7 +55,8 @@ class Logger {
         .join(' ')
       // Category tag convention: messages starting with "[stream]", "[fmp]" etc.
       const category = /^\[([\w-]+)\]/.exec(text)?.[1] ?? 'app'
-      const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} [${category}] ${this.redact(text)}`
+      const body = text.replace(/^\[[\w-]+\]\s*/, '')
+      const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} [${category}] ${this.redact(body)}`
       this.ring.push(line)
       if (this.ring.length > RING_SIZE) this.ring.splice(0, this.ring.length - RING_SIZE)
       mkdirSync(this.dir, { recursive: true })

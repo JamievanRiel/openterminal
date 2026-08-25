@@ -15,6 +15,14 @@ if (!app.isPackaged) {
 }
 
 logger.hookConsole()
+
+// Dev-only offline simulation: OT_OFFLINE=1 fails every main-process fetch so
+// the cached/badged startup paths can be exercised without pulling the cable.
+if (!app.isPackaged && process.env.OT_OFFLINE) {
+  console.log('[dev] OT_OFFLINE — all outbound fetches will fail')
+  globalThis.fetch = () => Promise.reject(new TypeError('fetch failed (OT_OFFLINE simulation)'))
+}
+
 const store = safeStore<Record<string, unknown>>('openterminal')
 let mainWindow: BrowserWindow | null = null
 let services: IpcServices | null = null

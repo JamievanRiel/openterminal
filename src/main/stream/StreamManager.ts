@@ -4,7 +4,8 @@ import { classify, fromStreamSymbol, toStreamSymbol } from '../../shared/symbols
 import { nextTransition, usSessionState } from '../../shared/marketHours'
 import type { TwelveDataProvider } from '../providers/twelvedata'
 
-const WS_URL = 'wss://ws.finnhub.io'
+// OT_WS_URL: dev knob to point the relay at an unreachable/local endpoint (offline sim, testing).
+const WS_URL = process.env.OT_WS_URL ?? 'wss://ws.finnhub.io'
 const FLUSH_MS = 150 // batch window, spec range 100–250ms
 const HEARTBEAT_CHECK_MS = 15_000
 const SILENCE_LIMIT_MS = 60_000

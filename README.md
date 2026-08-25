@@ -87,6 +87,13 @@ Releases built without code signing trigger OS warnings:
 
 Auto-update is **disabled** in unsigned builds (and in dev) by design — meaningful auto-update requires Windows Authenticode / macOS notarization. Distributions without signing must ship with the updater disabled (the default; see `src/main/updater.ts`).
 
+### Troubleshooting & diagnostics (v1.0.1)
+
+- Logs rotate in `userData/logs` (5 × 2 MB, secrets redacted) — SET → About → "Open logs folder".
+- SET → About → "Export diagnostics" produces the JSON to attach to a bug report (versions, provider status, bucket/cache stats, last 200 log lines — never API keys; tickers optional).
+- Corrupt settings files are backed up as `<name>.corrupt-<timestamp>.json` and recreated automatically.
+- CI (GitHub Actions) runs typecheck + the 55-test suite on every push, and builds unsigned Windows/macOS/Linux installers on `v*` tags.
+
 ### Security notes
 
 - Renderer: `contextIsolation` + `sandbox`, whitelisted IPC only, CSP in `index.html`, no Node access.
@@ -94,7 +101,7 @@ Auto-update is **disabled** in unsigned builds (and in dev) by design — meanin
 
 ## Data attribution & disclaimer
 
-Market data by **Finnhub**, **Twelve Data**, **Financial Modeling Prep**, **Alpaca**, **Marketaux** and **Polygon** under their respective terms. Crypto data by **CoinGecko** (coingecko.com). Macro data from **FRED®**, Federal Reserve Bank of St. Louis — this product uses the FRED API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. SEC filings from **EDGAR** (sec.gov); EDGAR requests carry an operator-contact User-Agent (see `src/main/edgar.ts`).
+Market data by **Finnhub**, **Twelve Data**, **Financial Modeling Prep**, **Alpaca**, **Marketaux** and **Polygon** under their respective terms. Crypto data by **CoinGecko** (coingecko.com). Macro data from **FRED®**, Federal Reserve Bank of St. Louis — this product uses the FRED API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. SEC filings from **EDGAR** (sec.gov); EDGAR requests carry an operator-contact User-Agent — set YOUR e-mail in SET → Providers (CACS stays politely disabled until you do).
 
 **Disclaimer**: market data may be delayed or incomplete. OpenTerminal is for personal and educational use; nothing in it is investment advice.
 

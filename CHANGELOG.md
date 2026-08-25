@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.0.1 — 2026-08-25
+
+Stabilization release — no new features.
+
+### Fixed
+- Market countdown could drift ±1h across US DST transitions (wall-clock arithmetic → epoch-exact boundaries; closed-state countdown now targets the actual open).
+- Finnhub 403 (plan-gated) was misreported as "key rejected"; all nine provider adapters now share one HTTP-status classifier with documented per-provider quirks (Alpaca 403 = bad key, FRED 400 = bad key, EDGAR 403 = throttle).
+- Concurrent identical candle requests could double-spend Twelve Data credits (in-flight coalescing added, matching the screener fix).
+- Live-store listener map grew slowly with symbol churn (empty sets now pruned).
+- Waking from laptop sleep left a dead WebSocket until the 60 s heartbeat; `powerMonitor` resume now recycles the socket immediately and refreshes visible quotes.
+- FMP's 250/day quota reset on every app restart; the bucket now persists across launches.
+- Hide-to-tray on Linux desktops without tray support could make the window unreachable (now falls back to a normal close).
+- macOS: Windows-style title-bar buttons replaced by native inset traffic lights; every shortcut now accepts Cmd; app menu added. Linux AppImage autostart pointed at the transient mount instead of the AppImage.
+
+### Added (operational, not features)
+- Rotating file logging (`userData/logs`, 5×2 MB) with secret redaction; console routed through it.
+- Crash capture: main-process errors show a dialog with an "Open logs folder" path; a crashed renderer auto-reloads once.
+- Diagnostics export (SET → About): versions, provider status (never keys), bucket states, cache stats, workspace shape, last 200 log lines.
+- Store schema versioning + migration runner; corrupt store files are backed up as `<name>.corrupt-<timestamp>.json` and recreated with a user notice.
+- SEC EDGAR contact e-mail moved from a code constant to SET → Providers (empty = CACS politely disabled).
+- Offline-resilient startup and an offline "save anyway" path in the first-run wizard.
+- Test suite grown from 10 to 55 tests (DST matrix, bucket persistence, error classes, router fallback, alert logic, migrations); GitHub Actions CI with a 3-OS installer matrix on tags.
+
 ## v1.0.0 — 2026-08-25
 
 First release. Built in six phases:
