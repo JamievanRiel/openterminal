@@ -22,6 +22,8 @@ import HpPanel from '../panels/HpPanel'
 import EcalPanel from '../panels/EcalPanel'
 import InsdPanel from '../panels/InsdPanel'
 import WirePanel from '../panels/WirePanel'
+import SpacePanel from '../panels/SpacePanel'
+import FltPanel from '../panels/FltPanel'
 import EqsPanel from '../panels/EqsPanel'
 import PortPanel from '../panels/PortPanel'
 import AlrtPanel from '../panels/AlrtPanel'
@@ -73,6 +75,10 @@ export function PanelContent({ fn, ticker, index }: { fn: string; ticker: string
       return <InsdPanel />
     case 'WIRE':
       return <WirePanel />
+    case 'SPACE':
+      return <SpacePanel />
+    case 'FLT':
+      return <FltPanel />
     case 'EQS':
       return <EqsPanel ticker={ticker} />
     case 'PORT':
