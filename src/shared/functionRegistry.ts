@@ -46,6 +46,7 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('DVD', 'Dividends', 'Payment history, yield and cut flags', 'Research', true, true, 4, 'KO DVD'),
   e('CACS', 'SEC filings', 'EDGAR filings with form-type filters', 'Research', true, true, 4, 'AAPL CACS'),
   e('HP', 'Historical prices', 'OHLCV table with CSV export', 'Research', true, true, 4, 'AAPL HP'),
+  e('ECAL', 'Economic calendar', "This week's macro events with impact and country filters", 'Research', false, true, 4, 'ECAL'),
   // Analysis
   e('EQS', 'Equity screener', 'FMP screen + client-side refinement; EQS <name> runs a saved screen', 'Analysis', false, true, 5, 'EQS BIGTECH'),
   e('PORT', 'Portfolio & P&L', 'Positions, live P&L, allocation, vs SPY', 'Analysis', false, true, 5, 'PORT'),

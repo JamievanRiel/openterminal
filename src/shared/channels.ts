@@ -18,6 +18,7 @@ export const INVOKE_CHANNELS = [
   'earnings:full',
   'dividends:get',
   'filings:get',
+  'calendar:get',
   'screener:run',
   'screener:screens',
   'screener:save-screen',

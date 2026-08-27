@@ -26,6 +26,7 @@ import { WatchlistManager } from './watchlists'
 import { CandleService } from './candles'
 import { FundamentalsService } from './fundamentals'
 import { EdgarService } from './edgar'
+import { CalendarService } from './calendar'
 import { PortfolioManager, portfolioSchema } from './portfolios'
 import { AlertEngine, focusMainWindow } from './alerts'
 import { FredProvider } from './providers/fred'
@@ -185,6 +186,7 @@ export function registerIpc(
   const edgar = new EdgarService(
     () => ((store.get('appSettings') as { edgarContact?: string } | undefined)?.edgarContact ?? '')
   )
+  const calendarSvc = new CalendarService()
   const portfolios = new PortfolioManager()
   const fred = new FredProvider(() => keys.getKey('fred'))
   const coingecko = new CoinGeckoProvider(() => keys.getKey('coingecko'))
@@ -392,6 +394,7 @@ export function registerIpc(
   })
   handle('dividends:get', (payload) => fundamentals.getDividends(symbolSchema.parse(payload).symbol))
   handle('filings:get', (payload) => edgar.getFilings(symbolSchema.parse(payload).symbol))
+  handle('calendar:get', () => calendarSvc.getWeek())
 
   // --- screener ---
   handle('screener:run', (payload) => fmp.runScreener(screenerFiltersSchema.parse(payload)))
