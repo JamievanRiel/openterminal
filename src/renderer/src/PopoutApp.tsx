@@ -14,6 +14,7 @@ import CacsPanel from './panels/CacsPanel'
 import HpPanel from './panels/HpPanel'
 import EcalPanel from './panels/EcalPanel'
 import InsdPanel from './panels/InsdPanel'
+import WirePanel from './panels/WirePanel'
 import MsgPanel from './panels/MsgPanel'
 import WeiPanel from './panels/WeiPanel'
 import MoversPanel from './panels/MoversPanel'
@@ -65,6 +66,8 @@ function PopoutContent({ panel, onChart }: { panel: PanelState; onChart: (c: Cha
       return <EcalPanel />
     case 'INSD':
       return <InsdPanel />
+    case 'WIRE':
+      return <WirePanel />
     case 'MSG':
       return t ? <MsgPanel ticker={t} /> : <Empty />
     case 'W':

@@ -5,7 +5,7 @@ import { invoke } from '../lib/ipc'
 import { fmtRelativeTime } from '../lib/format'
 import { ErrorState, LoadingState } from '../components/PanelStates'
 
-function SentimentBadge({ score }: { score: number }): JSX.Element {
+export function SentimentBadge({ score }: { score: number }): JSX.Element {
   const label = score > 0.15 ? 'BULLISH' : score < -0.15 ? 'BEARISH' : 'NEUTRAL'
   const cls = score > 0.15 ? 'border-term-up text-term-up' : score < -0.15 ? 'border-term-down text-term-down' : 'border-term-border text-term-dim'
   return <span className={'border px-1 text-[8px] uppercase ' + cls}>{label}</span>
