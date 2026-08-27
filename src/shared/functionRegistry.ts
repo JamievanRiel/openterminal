@@ -61,6 +61,8 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('OPT', 'Options chain', 'Calls/puts by expiration (needs Polygon key + flag)', 'Analysis', true, true, 6, 'AAPL OPT'),
   // Tools
   e('MSG', 'Notes', 'Per-ticker scratchpad, autosaved', 'Tools', true, true, 5, 'AAPL MSG'),
+  e('SPACE', 'Space dashboard', 'ISS live position, Kp index, moon phase, upcoming launches', 'Tools', false, true, 5, 'SPACE'),
+  e('FLT', 'Flight board', 'Live US airspace via OpenSky — jets first (anon, 10m poll)', 'Tools', false, true, 5, 'FLT'),
   e('SET', 'Settings', 'API keys, providers, behavior, appearance', 'Tools', false, true, 1, 'SET'),
   e('HELP', 'Function reference', 'This reference', 'Tools', false, true, 1, 'HELP'),
   e('WS', 'Workspaces', 'WS <name> switch · WS SAVE/DELETE <name> · WS LIST', 'Tools', false, true, 5, 'WS TRADING')

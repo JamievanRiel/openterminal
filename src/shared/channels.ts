@@ -21,6 +21,8 @@ export const INVOKE_CHANNELS = [
   'calendar:get',
   'insider:latest',
   'wire:get',
+  'space:get',
+  'flights:get',
   'screener:run',
   'screener:screens',
   'screener:save-screen',
