@@ -249,6 +249,22 @@ export interface InsiderResult {
   fetchedAt: number
 }
 
+export interface WireItem {
+  title: string
+  summary: string // HTML-stripped, capped
+  url: string
+  source: string
+  category: string // 'markets' | 'crypto'
+  sentiment: number | null // lexicon score −1..1; null when no lexicon hit
+  published: number // epoch ms
+}
+
+export interface WireResult {
+  items: WireItem[]
+  sentiment: { bullish: number; bearish: number; score: number }
+  fetchedAt: number
+}
+
 /** Full Finnhub basic-financials metric record (FA fallback mode). */
 export type MetricRecord = Record<string, number | string | null>
 
