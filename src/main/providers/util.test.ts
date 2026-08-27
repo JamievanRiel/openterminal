@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { classifyStatus, parseRelatedTickers, TokenBucket, type BucketPersistence } from './util'
+import { classifyStatus, dedupeBySymbolDate, parseRelatedTickers, TokenBucket, type BucketPersistence } from './util'
 
 describe('TokenBucket', () => {
   beforeEach(() => {
@@ -73,5 +73,22 @@ describe('parseRelatedTickers', () => {
     expect(parseRelatedTickers('A,B,C,D,E')).toEqual(['A', 'B', 'C', 'D'])
     expect(parseRelatedTickers('')).toEqual([])
     expect(parseRelatedTickers(undefined)).toEqual([])
+  })
+})
+
+describe('dedupeBySymbolDate', () => {
+  it('keeps the first row per symbol+date and preserves distinct dates', () => {
+    const rows = [
+      { symbol: 'ABLT', date: '2026-08-27', epsEstimate: 1 },
+      { symbol: 'ABLT', date: '2026-08-27', epsEstimate: 2 },
+      { symbol: 'ABLT', date: '2026-08-28', epsEstimate: 3 },
+      { symbol: 'AAPL', date: '2026-08-27', epsEstimate: 4 }
+    ]
+    expect(dedupeBySymbolDate(rows).map((r) => `${r.symbol}:${r.date}`)).toEqual([
+      'ABLT:2026-08-27',
+      'ABLT:2026-08-28',
+      'AAPL:2026-08-27'
+    ])
+    expect(dedupeBySymbolDate(rows)[0].epsEstimate).toBe(1)
   })
 })

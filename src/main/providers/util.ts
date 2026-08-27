@@ -28,6 +28,17 @@ export function parseRelatedTickers(related?: string): string[] {
   return [...new Set((related ?? '').split(',').filter(Boolean))].slice(0, 4)
 }
 
+/** Calendar feeds may repeat a symbol on one day — first row wins (dup React keys otherwise). */
+export function dedupeBySymbolDate<T extends { symbol: string; date: string }>(rows: T[]): T[] {
+  const seen = new Set<string>()
+  return rows.filter((r) => {
+    const key = `${r.symbol}:${r.date}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export class ProviderError extends Error {
   constructor(
     public code: 'NO_KEY' | 'BAD_KEY' | 'RATE_LIMITED' | 'HTTP' | 'NETWORK' | 'UNSUPPORTED',

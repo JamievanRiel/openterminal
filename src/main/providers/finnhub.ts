@@ -9,7 +9,7 @@ import type {
   Quote,
   SymbolHit
 } from '../../shared/types'
-import { classifyStatus, parseRelatedTickers, ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, dedupeBySymbolDate, parseRelatedTickers, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://finnhub.io/api/v1'
 
@@ -300,10 +300,11 @@ export class FinnhubProvider {
       '/calendar/earnings',
       { from, to }
     )
-    const items: EarningsCalItem[] = (d.earningsCalendar ?? [])
-      .filter((e): e is { symbol: string; date: string; epsEstimate?: number | null } => Boolean(e.symbol && e.date))
-      .map((e) => ({ symbol: e.symbol, date: e.date, epsEstimate: e.epsEstimate ?? null }))
-      .slice(0, 400)
+    const items: EarningsCalItem[] = dedupeBySymbolDate(
+      (d.earningsCalendar ?? [])
+        .filter((e): e is { symbol: string; date: string; epsEstimate?: number | null } => Boolean(e.symbol && e.date))
+        .map((e) => ({ symbol: e.symbol, date: e.date, epsEstimate: e.epsEstimate ?? null }))
+    ).slice(0, 400)
     earningsWeekCache.set(key, items)
     return items
   }
