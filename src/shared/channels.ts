@@ -20,6 +20,7 @@ export const INVOKE_CHANNELS = [
   'filings:get',
   'calendar:get',
   'insider:latest',
+  'wire:get',
   'screener:run',
   'screener:screens',
   'screener:save-screen',

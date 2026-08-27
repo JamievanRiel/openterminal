@@ -28,6 +28,7 @@ import { FundamentalsService } from './fundamentals'
 import { EdgarService } from './edgar'
 import { CalendarService } from './calendar'
 import { enrichNewsSentiment } from './sentimentCore'
+import { WireService } from './wire'
 import { PortfolioManager, portfolioSchema } from './portfolios'
 import { AlertEngine, focusMainWindow } from './alerts'
 import { FredProvider } from './providers/fred'
@@ -188,6 +189,7 @@ export function registerIpc(
     () => ((store.get('appSettings') as { edgarContact?: string } | undefined)?.edgarContact ?? '')
   )
   const calendarSvc = new CalendarService()
+  const wireSvc = new WireService()
   const portfolios = new PortfolioManager()
   const fred = new FredProvider(() => keys.getKey('fred'))
   const coingecko = new CoinGeckoProvider(() => keys.getKey('coingecko'))
@@ -397,6 +399,7 @@ export function registerIpc(
   handle('filings:get', (payload) => edgar.getFilings(symbolSchema.parse(payload).symbol))
   handle('calendar:get', () => calendarSvc.getWeek())
   handle('insider:latest', () => edgar.getLatestForm4())
+  handle('wire:get', () => wireSvc.get())
 
   // --- screener ---
   handle('screener:run', (payload) => fmp.runScreener(screenerFiltersSchema.parse(payload)))
