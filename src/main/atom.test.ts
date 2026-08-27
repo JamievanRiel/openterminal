@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseAtomEntries, parseForm4 } from './atom'
+import { parseAtomEntries, parseFeedEntries, parseForm4 } from './atom'
 
 // Shape of EDGAR's "latest filings" (getcurrent) Atom feed: each Form 4 usually
 // appears as an (Issuer) + (Reporting) entry pair sharing one filing link.
@@ -39,6 +39,44 @@ describe('parseAtomEntries', () => {
   it('returns [] for non-feed input', () => {
     expect(parseAtomEntries('')).toEqual([])
     expect(parseAtomEntries('<html>not a feed</html>')).toEqual([])
+  })
+})
+
+// RSS 2.0 shape (CNBC/MarketWatch style, incl. CDATA wrapping).
+const RSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+<title>CNBC Markets</title>
+<item>
+<title><![CDATA[Stocks rally after Fed decision]]></title>
+<link>https://www.cnbc.com/2026/08/27/markets.html</link>
+<description>Equities jumped &amp; bonds fell.</description>
+<pubDate>Wed, 27 Aug 2026 14:05:00 GMT</pubDate>
+</item>
+<item>
+<title>Oil slumps on demand fears</title>
+<link>https://www.cnbc.com/2026/08/27/oil.html</link>
+<description><![CDATA[Crude fell 3% in early trading.]]></description>
+<pubDate>Wed, 27 Aug 2026 13:40:00 GMT</pubDate>
+</item>
+</channel></rss>`
+
+describe('parseFeedEntries', () => {
+  it('parses RSS 2.0 items into the AtomEntry shape', () => {
+    const entries = parseFeedEntries(RSS)
+    expect(entries).toHaveLength(2)
+    expect(entries[0].title).toBe('Stocks rally after Fed decision')
+    expect(entries[0].link).toBe('https://www.cnbc.com/2026/08/27/markets.html')
+    expect(entries[0].updated).toBe('Wed, 27 Aug 2026 14:05:00 GMT')
+    expect(entries[0].summary).toBe('Equities jumped & bonds fell.')
+    expect(entries[1].summary).toBe('Crude fell 3% in early trading.')
+  })
+
+  it('delegates Atom feeds to the entry parser', () => {
+    expect(parseFeedEntries(FEED)).toEqual(parseAtomEntries(FEED))
+  })
+
+  it('returns [] for non-feed input', () => {
+    expect(parseFeedEntries('<html>nope</html>')).toEqual([])
   })
 })
 

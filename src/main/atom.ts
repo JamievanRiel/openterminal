@@ -26,15 +26,40 @@ function decodeEntities(text: string): string {
   return text.replace(/&(?:amp|lt|gt|quot|#39|apos);/g, (m) => ENTITIES[m] ?? m)
 }
 
+/** Inner text of the first <name>…</name> in the block, CDATA unwrapped, entities decoded. */
+function extractTag(block: string, name: string): string {
+  const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))
+  if (!m) return ''
+  const inner = m[1].trim()
+  const cdata = inner.match(/^<!\[CDATA\[([\s\S]*?)\]\]>$/)
+  return decodeEntities((cdata ? cdata[1] : inner).trim())
+}
+
 export function parseAtomEntries(xml: string): AtomEntry[] {
   const entries: AtomEntry[] = []
   for (const block of xml.match(/<entry\b[\s\S]*?<\/entry>/g) ?? []) {
-    const tag = (name: string): string => {
-      const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))
-      return m ? decodeEntities(m[1].trim()) : ''
-    }
     const link = block.match(/<link\b[^>]*href="([^"]*)"/)
-    entries.push({ title: tag('title'), link: link ? decodeEntities(link[1]) : '', updated: tag('updated'), summary: tag('summary') })
+    entries.push({
+      title: extractTag(block, 'title'),
+      link: link ? decodeEntities(link[1]) : '',
+      updated: extractTag(block, 'updated'),
+      summary: extractTag(block, 'summary')
+    })
+  }
+  return entries
+}
+
+/** Atom <entry> or RSS 2.0 <item> feeds, normalised to the AtomEntry shape. */
+export function parseFeedEntries(xml: string): AtomEntry[] {
+  if (/<entry\b/.test(xml)) return parseAtomEntries(xml)
+  const entries: AtomEntry[] = []
+  for (const block of xml.match(/<item\b[\s\S]*?<\/item>/g) ?? []) {
+    entries.push({
+      title: extractTag(block, 'title'),
+      link: extractTag(block, 'link'),
+      updated: extractTag(block, 'pubDate'),
+      summary: extractTag(block, 'description')
+    })
   }
   return entries
 }
