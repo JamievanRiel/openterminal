@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { classifyStatus, TokenBucket, type BucketPersistence } from './util'
+import { classifyStatus, parseRelatedTickers, TokenBucket, type BucketPersistence } from './util'
 
 describe('TokenBucket', () => {
   beforeEach(() => {
@@ -64,5 +64,14 @@ describe('classifyStatus', () => {
   it('carries retryAfterMs on 429 only', () => {
     expect(classifyStatus('X', 429, 5000)?.retryAfterMs).toBe(5000)
     expect(classifyStatus('X', 500, 5000)?.retryAfterMs).toBeUndefined()
+  })
+})
+
+describe('parseRelatedTickers', () => {
+  it('splits, dedupes and caps Finnhub related strings', () => {
+    expect(parseRelatedTickers('ABLT,ABLT,AAPL')).toEqual(['ABLT', 'AAPL'])
+    expect(parseRelatedTickers('A,B,C,D,E')).toEqual(['A', 'B', 'C', 'D'])
+    expect(parseRelatedTickers('')).toEqual([])
+    expect(parseRelatedTickers(undefined)).toEqual([])
   })
 })

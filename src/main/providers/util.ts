@@ -23,6 +23,11 @@ export function classifyStatus(
   return new ProviderError('HTTP', `${provider} HTTP ${status}`)
 }
 
+/** Finnhub `related` is comma-separated and may repeat a symbol — dedupe, cap at 4. */
+export function parseRelatedTickers(related?: string): string[] {
+  return [...new Set((related ?? '').split(',').filter(Boolean))].slice(0, 4)
+}
+
 export class ProviderError extends Error {
   constructor(
     public code: 'NO_KEY' | 'BAD_KEY' | 'RATE_LIMITED' | 'HTTP' | 'NETWORK' | 'UNSUPPORTED',

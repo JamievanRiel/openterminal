@@ -9,7 +9,7 @@ import type {
   Quote,
   SymbolHit
 } from '../../shared/types'
-import { classifyStatus, ProviderError, TokenBucket, TtlCache } from './util'
+import { classifyStatus, parseRelatedTickers, ProviderError, TokenBucket, TtlCache } from './util'
 
 const BASE = 'https://finnhub.io/api/v1'
 
@@ -240,7 +240,7 @@ export class FinnhubProvider {
       headline: a.headline ?? '',
       summary: a.summary ?? '',
       url: a.url ?? '',
-      tickers: (a.related ?? '').split(',').filter(Boolean).slice(0, 4),
+      tickers: parseRelatedTickers(a.related),
       datetime: (a.datetime ?? 0) * 1000
     }
   }

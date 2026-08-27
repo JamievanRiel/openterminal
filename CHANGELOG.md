@@ -5,6 +5,7 @@
 ### Added
 - `ECAL` — economic calendar: this week's macro events (CPI, NFP, FOMC, …) from the keyless Forex Factory JSON mirror, with impact (ALL/MED+/HIGH) and country (US/EU/GB/JP/ALL) filters, next-event highlight, 30 min disk cache with stale fallback.
 - `INSD` — insider filings: live market-wide SEC Form 4 stream from the EDGAR "latest filings" Atom feed (reuses the EDGAR contact e-mail from SET → Providers), Issuer+Reporting pairs folded into one row, 2 min poll with new-row flash. First two modules ported from the `Riel-main` reference app per `docs/superpowers/specs/2026-08-27-ecal-insd-design.md`.
+- `WIRE` — keyless RSS news wire (Reuters via Google News, CNBC, Yahoo Finance, MarketWatch, CoinDesk) with a finance sentiment lexicon per headline, a bull/bear/average meter in the header, category filters (ALL/MARKETS/CRYPTO) and a 2 min poll; one broken feed never blanks the wire. The same lexicon now backfills missing sentiment badges in `N`/`TOP` (provider-supplied scores are never overwritten). Third module ported from `Riel-main`.
 
 ## v1.0.1 — 2026-08-25
 
