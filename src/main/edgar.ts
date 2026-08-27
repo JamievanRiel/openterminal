@@ -1,8 +1,11 @@
-import type { Filing, FilingsResult } from '../shared/types'
+import type { Filing, FilingsResult, InsiderResult } from '../shared/types'
 import { DiskCache } from './diskcache'
 import { classifyStatus, ProviderError } from './providers/util'
+import { parseAtomEntries, parseForm4 } from './atom'
 
 const TICKER_MAP_URL = 'https://www.sec.gov/files/company_tickers.json'
+const FORM4_FEED_URL =
+  'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&company=&dateb=&owner=include&count=40&output=atom'
 const MIN_REQUEST_GAP_MS = 350
 
 interface TickerMap {
@@ -12,6 +15,7 @@ interface TickerMap {
 export class EdgarService {
   private tickerCache = new DiskCache<TickerMap>('edgar-tickers', 7 * 24 * 3600_000, 2)
   private filingsCache = new DiskCache<FilingsResult>('edgar-filings', 6 * 3600_000, 60)
+  private form4Cache = new DiskCache<InsiderResult>('edgar-form4', 2 * 60_000, 2)
   private lastRequestAt = 0
 
   /**
@@ -32,7 +36,7 @@ export class EdgarService {
     return `OpenTerminal/1.0 (contact: ${contact})`
   }
 
-  private async fetchJson<T>(url: string): Promise<T> {
+  private async doFetch(url: string, accept: string): Promise<Response> {
     const userAgent = this.userAgent()
     // Tiny per-host throttle on top of the caching — stay far below EDGAR's ceiling.
     const wait = this.lastRequestAt + MIN_REQUEST_GAP_MS - Date.now()
@@ -41,7 +45,7 @@ export class EdgarService {
     console.log(`[edgar] GET ${url} (UA: ${userAgent})`)
     let res: Response
     try {
-      res = await fetch(url, { headers: { 'User-Agent': userAgent, Accept: 'application/json' } })
+      res = await fetch(url, { headers: { 'User-Agent': userAgent, Accept: accept } })
     } catch (err) {
       throw new ProviderError('NETWORK', 'Network error reaching SEC EDGAR: ' + String(err))
     }
@@ -49,7 +53,15 @@ export class EdgarService {
     if (res.status === 403) throw new ProviderError('RATE_LIMITED', 'SEC EDGAR throttled the request — try again shortly.')
     const classified = classifyStatus('SEC EDGAR', res.status)
     if (classified) throw classified
-    return (await res.json()) as T
+    return res
+  }
+
+  private async fetchJson<T>(url: string): Promise<T> {
+    return (await (await this.doFetch(url, 'application/json')).json()) as T
+  }
+
+  private async fetchText(url: string): Promise<string> {
+    return await (await this.doFetch(url, 'application/atom+xml')).text()
   }
 
   private async tickerMap(): Promise<TickerMap> {
@@ -116,6 +128,21 @@ export class EdgarService {
       }
       const result: FilingsResult = { symbol, cik: entry.cik, filings, fetchedAt: Date.now() }
       this.filingsCache.set(symbol, result)
+      return result
+    } catch (err) {
+      if (cached) return cached.value
+      throw err
+    }
+  }
+
+  /** Latest Form 4 (insider transaction) filings, market-wide, newest first. */
+  async getLatestForm4(): Promise<InsiderResult> {
+    const cached = this.form4Cache.get('latest')
+    if (cached && !cached.stale) return cached.value
+    try {
+      const xml = await this.fetchText(FORM4_FEED_URL)
+      const result: InsiderResult = { filings: parseForm4(parseAtomEntries(xml)), fetchedAt: Date.now() }
+      this.form4Cache.set('latest', result)
       return result
     } catch (err) {
       if (cached) return cached.value

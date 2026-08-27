@@ -395,6 +395,7 @@ export function registerIpc(
   handle('dividends:get', (payload) => fundamentals.getDividends(symbolSchema.parse(payload).symbol))
   handle('filings:get', (payload) => edgar.getFilings(symbolSchema.parse(payload).symbol))
   handle('calendar:get', () => calendarSvc.getWeek())
+  handle('insider:latest', () => edgar.getLatestForm4())
 
   // --- screener ---
   handle('screener:run', (payload) => fmp.runScreener(screenerFiltersSchema.parse(payload)))
