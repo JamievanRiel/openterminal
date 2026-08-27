@@ -265,6 +265,57 @@ export interface WireResult {
   fetchedAt: number
 }
 
+export interface MoonInfo {
+  phase: string // one of the 8 phase names
+  illumination: number // 0..1
+  nextFull: number // epoch ms
+  nextNew: number // epoch ms
+}
+
+export interface IssPosition {
+  lat: number
+  lon: number
+  altitudeKm: number
+  velocityKmh: number
+  visibility: string // 'daylight' | 'eclipsed'
+}
+
+export interface SpaceLaunch {
+  name: string
+  provider: string
+  pad: string
+  net: number | null // launch time, epoch ms
+  status: string // e.g. 'Go', 'TBD'
+}
+
+/** Parts are independent: a failed fetch nulls its slot, moon always computes. */
+export interface SpaceResult {
+  iss: IssPosition | null
+  kp: number | null
+  moon: MoonInfo
+  launches: SpaceLaunch[]
+  fetchedAt: number
+}
+
+export interface Flight {
+  icao24: string
+  callsign: string
+  country: string
+  lat: number
+  lon: number
+  altitudeM: number | null
+  velocityMs: number | null
+  heading: number
+  onGround: boolean
+  jet: boolean // business-jet callsign heuristic
+}
+
+export interface FlightsResult {
+  flights: Flight[] // capped in main; jets first, then fastest
+  total: number // uncapped count in the bbox
+  fetchedAt: number
+}
+
 /** Full Finnhub basic-financials metric record (FA fallback mode). */
 export type MetricRecord = Record<string, number | string | null>
 
