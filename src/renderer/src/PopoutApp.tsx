@@ -12,6 +12,7 @@ import ErnPanel from './panels/ErnPanel'
 import DvdPanel from './panels/DvdPanel'
 import CacsPanel from './panels/CacsPanel'
 import HpPanel from './panels/HpPanel'
+import EcalPanel from './panels/EcalPanel'
 import MsgPanel from './panels/MsgPanel'
 import WeiPanel from './panels/WeiPanel'
 import MoversPanel from './panels/MoversPanel'
@@ -59,6 +60,8 @@ function PopoutContent({ panel, onChart }: { panel: PanelState; onChart: (c: Cha
       return t ? <CacsPanel ticker={t} /> : <Empty />
     case 'HP':
       return t ? <HpPanel ticker={t} /> : <Empty />
+    case 'ECAL':
+      return <EcalPanel />
     case 'MSG':
       return t ? <MsgPanel ticker={t} /> : <Empty />
     case 'W':
