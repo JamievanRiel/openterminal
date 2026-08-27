@@ -20,6 +20,7 @@ import DvdPanel from '../panels/DvdPanel'
 import CacsPanel from '../panels/CacsPanel'
 import HpPanel from '../panels/HpPanel'
 import EcalPanel from '../panels/EcalPanel'
+import InsdPanel from '../panels/InsdPanel'
 import EqsPanel from '../panels/EqsPanel'
 import PortPanel from '../panels/PortPanel'
 import AlrtPanel from '../panels/AlrtPanel'
@@ -67,6 +68,8 @@ export function PanelContent({ fn, ticker, index }: { fn: string; ticker: string
       return ticker ? <HpPanel ticker={ticker} /> : <PlaceholderPanel fn={fn} />
     case 'ECAL':
       return <EcalPanel />
+    case 'INSD':
+      return <InsdPanel />
     case 'EQS':
       return <EqsPanel ticker={ticker} />
     case 'PORT':

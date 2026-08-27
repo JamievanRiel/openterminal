@@ -13,6 +13,7 @@ import DvdPanel from './panels/DvdPanel'
 import CacsPanel from './panels/CacsPanel'
 import HpPanel from './panels/HpPanel'
 import EcalPanel from './panels/EcalPanel'
+import InsdPanel from './panels/InsdPanel'
 import MsgPanel from './panels/MsgPanel'
 import WeiPanel from './panels/WeiPanel'
 import MoversPanel from './panels/MoversPanel'
@@ -62,6 +63,8 @@ function PopoutContent({ panel, onChart }: { panel: PanelState; onChart: (c: Cha
       return t ? <HpPanel ticker={t} /> : <Empty />
     case 'ECAL':
       return <EcalPanel />
+    case 'INSD':
+      return <InsdPanel />
     case 'MSG':
       return t ? <MsgPanel ticker={t} /> : <Empty />
     case 'W':
