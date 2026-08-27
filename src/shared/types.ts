@@ -220,6 +220,35 @@ export interface FilingsResult {
   fetchedAt: number
 }
 
+export interface EconomicEvent {
+  title: string
+  country: string // 'US', 'EU', 'GB', 'JP', or raw currency code ('CAD', …)
+  impact: 'high' | 'medium' | 'low'
+  actual: string // '' when not yet released
+  forecast: string
+  previous: string
+  time: number | null // epoch ms; null when unparseable
+}
+
+export interface CalendarResult {
+  events: EconomicEvent[]
+  fetchedAt: number
+}
+
+export interface InsiderFiling {
+  ticker: string | null // '(TSLA)'-style match in the issuer title, when present
+  company: string | null // from the '(Issuer)' Atom entry of the filing pair
+  filer: string // from the '(Reporting)' entry
+  form: string // '4' or '4/A'
+  filedAt: number // epoch ms
+  url: string
+}
+
+export interface InsiderResult {
+  filings: InsiderFiling[]
+  fetchedAt: number
+}
+
 /** Full Finnhub basic-financials metric record (FA fallback mode). */
 export type MetricRecord = Record<string, number | string | null>
 
