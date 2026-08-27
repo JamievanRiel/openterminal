@@ -1,3 +1,5 @@
+import type { NewsItem } from '../shared/types'
+
 /**
  * Small, dependency-free finance sentiment lexicon, ported from Riel-main's
  * news provider. Deliberately crude: a word-count ratio, not NLP — good
@@ -33,6 +35,17 @@ export interface SentimentAggregate {
   bullish: number // % of items scoring > 0.05
   bearish: number // % of items scoring < -0.05
   score: number // average, nulls counted as 0 (Riel semantics)
+}
+
+/**
+ * Backfill missing sentiment on provider news items from the lexicon so the
+ * N/TOP badges appear even when the provider supplies none (Finnhub).
+ * Provider-supplied scores are never overwritten.
+ */
+export function enrichNewsSentiment(items: NewsItem[]): NewsItem[] {
+  return items.map((item) =>
+    typeof item.sentiment === 'number' ? item : { ...item, sentiment: scoreSentiment(`${item.headline} ${item.summary}`) }
+  )
 }
 
 export function aggregateSentiment(scores: Array<number | null>): SentimentAggregate {

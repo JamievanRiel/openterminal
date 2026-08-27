@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateSentiment, scoreSentiment } from './sentimentCore'
+import { aggregateSentiment, enrichNewsSentiment, scoreSentiment } from './sentimentCore'
+import type { NewsItem } from '../shared/types'
 
 describe('scoreSentiment', () => {
   it('scores all-positive headlines 1', () => {
@@ -43,5 +44,33 @@ describe('aggregateSentiment', () => {
 
   it('returns zeros for an empty list', () => {
     expect(aggregateSentiment([])).toEqual({ bullish: 0, bearish: 0, score: 0 })
+  })
+})
+
+describe('enrichNewsSentiment', () => {
+  const item = (over: Partial<NewsItem>): NewsItem => ({
+    id: '1',
+    source: 'x',
+    headline: 'Stocks rally',
+    summary: '',
+    url: 'https://example.com',
+    tickers: [],
+    datetime: 0,
+    ...over
+  })
+
+  it('fills missing sentiment from the lexicon', () => {
+    const [enriched] = enrichNewsSentiment([item({ sentiment: null })])
+    expect(enriched.sentiment).toBe(1)
+  })
+
+  it('leaves provider-supplied sentiment untouched', () => {
+    const [enriched] = enrichNewsSentiment([item({ sentiment: -0.42 })])
+    expect(enriched.sentiment).toBe(-0.42)
+  })
+
+  it('keeps sentiment null when the lexicon has no hits', () => {
+    const [enriched] = enrichNewsSentiment([item({ headline: 'Committee meets Tuesday', sentiment: undefined })])
+    expect(enriched.sentiment).toBeNull()
   })
 })

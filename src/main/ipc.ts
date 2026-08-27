@@ -27,6 +27,7 @@ import { CandleService } from './candles'
 import { FundamentalsService } from './fundamentals'
 import { EdgarService } from './edgar'
 import { CalendarService } from './calendar'
+import { enrichNewsSentiment } from './sentimentCore'
 import { PortfolioManager, portfolioSchema } from './portfolios'
 import { AlertEngine, focusMainWindow } from './alerts'
 import { FredProvider } from './providers/fred'
@@ -272,12 +273,12 @@ export function registerIpc(
     const p = newsSchema.parse(payload)
     try {
       const items = await finnhub.getNews(p.symbol, p.page)
-      return { items, provider: 'finnhub', fetchedAt: Date.now() }
+      return { items: enrichNewsSentiment(items), provider: 'finnhub', fetchedAt: Date.now() }
     } catch (err) {
       if (p.symbol !== null && p.page === 0 && marketaux.configured()) {
         console.log('[news] finnhub failed, falling back to marketaux for', p.symbol)
         const items = await marketaux.getCompanyNews(p.symbol)
-        return { items, provider: 'marketaux', fetchedAt: Date.now() }
+        return { items: enrichNewsSentiment(items), provider: 'marketaux', fetchedAt: Date.now() }
       }
       throw err
     }
