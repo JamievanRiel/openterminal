@@ -1,6 +1,6 @@
 # Riel-main → OpenTerminal port — status & continuation guide
 
-*Last updated: 2026-08-27. This is the handoff doc for continuing the port —
+*Last updated: 2026-09-15. This is the handoff doc for continuing the port —
 read it (plus the workflow section below) before starting the next module.*
 
 ## Context
@@ -8,8 +8,9 @@ read it (plus the workflow section below) before starting the next module.*
 `Riel-main/` in the repo root is a Python/PySide6 reference app ("Mini
 Bloomberg Terminal") whose keyless data modules are being ported, one by one,
 into OpenTerminal as native TypeScript. Decision history and the phase-1 spec:
-`docs/superpowers/specs/2026-08-27-ecal-insd-design.md`. `Riel-main/` stays
-**untracked** on purpose — reference only, never imported, never committed.
+`docs/superpowers/specs/2026-08-27-ecal-insd-design.md`. `Riel-main/` is
+vendored in the repo (commit 5622ad2) as a read-only port reference — never
+imported by the app, never built.
 
 ## Status
 
@@ -20,8 +21,8 @@ into OpenTerminal as native TypeScript. Decision history and the phase-1 spec:
 | News / sentiment (RSS + lexicon) | `WIRE` (+ badge backfill in `N`/`TOP`) | ✅ merged |
 | Space & Moon (ISS, launches, Kp, moon) | `SPACE` | ✅ merged |
 | Flights / private jets (OpenSky) | `FLT` | ✅ merged |
-| Options flow (Yahoo chain) | — | ⏳ next |
-| Social (Reddit RSS) | — | ⏳ after that |
+| Options flow (Yahoo chain) | `FLOW` | ✅ merged (Yahoo 429s this IP — see quirks) |
+| Social (Reddit RSS) | — | ⏳ next |
 | Ships / AIS (aisstream) | — | ⛔ only with a key (see below) |
 | Google Trends (pytrends) | — | ❌ dropped: no official API, fragile |
 | Markets/crypto via yfinance/CoinGecko | — | not ported: OpenTerminal already covers these |
@@ -32,16 +33,18 @@ into OpenTerminal as native TypeScript. Decision history and the phase-1 spec:
   `atom.ts` (Atom + RSS 2.0 + CDATA parser — reuse this, no XML lib!),
   `sentimentCore.ts` (lexicon, aggregate, N/TOP backfill), `wireCore.ts`,
   `moonCore.ts` (mean-synodic, replaces ephem), `spaceCore.ts`,
-  `flightsCore.ts`. Each has a sibling `.test.ts`.
+  `flightsCore.ts`, `optionsFlowCore.ts`. Each has a sibling `.test.ts`.
+  `yahooSession.ts` sits alongside them: not pure (it fetches), but it takes
+  its `fetch` as a constructor argument, so it is unit-tested all the same.
 - **Thin services** (fetch + `DiskCache` + stale-on-error): `calendar.ts`,
-  `wire.ts`, `space.ts`, `flights.ts`; Form 4 lives on the existing
+  `wire.ts`, `space.ts`, `flights.ts`, `optionsFlow.ts`; Form 4 lives on the existing
   `EdgarService` (`edgar.ts`) to reuse its contact-UA/throttle/403 plumbing.
 - **Map**: `src/renderer/src/components/WorldMap.tsx` (equirectangular SVG,
   markers with glyph/rotation/tooltip, optional region crop) over the
   committed asset `src/renderer/src/assets/worldLand.ts` (regenerate with
   `node scripts/gen-worldmap.mjs`; Natural Earth, public domain).
-- **Panels**: `EcalPanel`, `InsdPanel`, `WirePanel`, `SpacePanel`, `FltPanel`
-  — routed in `components/PanelGrid.tsx`, `PopoutApp.tsx`, and added to the
+- **Panels**: `EcalPanel`, `InsdPanel`, `WirePanel`, `SpacePanel`, `FltPanel`,
+  `FlowPanel` — routed in `components/PanelGrid.tsx`, `PopoutApp.tsx`, and added to the
   leak-harness list in `lib/devHarness.tsx`.
 
 ## The wiring checklist (identical for every module)
@@ -86,27 +89,28 @@ into OpenTerminal as native TypeScript. Decision history and the phase-1 spec:
 - Visual check for map-like UI: render a sample to SVG and convert with
   `magick` (available on this machine), then view the PNG.
 
-## Next module: options flow (Yahoo chain)
+## Done: options flow (`FLOW`)
 
-Port of `Riel-main/providers/options.py`. Suggested command: `FLOW`
-(Research) — `OPT` is taken by the Polygon chain panel; keep them separate.
+Built exactly as specced below-the-line in the old plan: nearest expiry, top 12
+by volume, `unusual = volume > max(openInterest * 1.0, 100)`, P/C ratio from
+total put vs call volume, ticker-driven with SPY as the tickerless default.
 
-- Yahoo's chain endpoint needs the **cookie + crumb dance** since 2023:
-  GET `https://fc.yahoo.com` (ignore body, keep cookies) → GET
-  `https://query2.finance.yahoo.com/v1/test/getcrumb` with those cookies →
-  call `https://query2.finance.yahoo.com/v7/finance/options/{SYMBOL}?crumb=…`.
-  Needs a browser-ish User-Agent. Cache the crumb; refresh on 401/403 once.
-  If Yahoo proves too hostile, fall back honestly (ErrorState), never fake it.
-- Riel's logic to port: nearest expiry only; per contract
-  `unusual = volume > max(openInterest * ratio, 100)` with ratio 1.0;
-  P/C ratio = total put volume / total call volume; top 12 by volume; spot
-  from the quote. Default symbols in Riel: SPY, QQQ, AAPL, NVDA, TSLA — but
-  make the panel ticker-driven (`AAPL FLOW`), defaulting to SPY when
-  tickerless.
-- Panel: header with P/C ratio + call/put volume; table of top contracts
-  (type, strike, last, volume, OI, IV, UNUSUAL badge amber).
+- The crumb dance lives in `yahooSession.ts`, not in the service: it takes a
+  `fetch` in its constructor, so the handshake, the crumb reuse, the
+  one-shot refresh on 401/403 and the 429/network mapping are all unit-tested
+  without a network. Reuse it for any future Yahoo endpoint.
+- **Jamie chose Yahoo knowingly** over a working CBOE alternative
+  (`https://cdn.cboe.com/api/global/delayed_quotes/options/<SYM>.json` —
+  keyless, no handshake, adds greeks, verified 200 from this machine). If the
+  Yahoo block ever becomes permanent, that is the drop-in replacement: the
+  panel and types stay, only a new core parser is needed (OCC symbol carries
+  expiry/type/strike; pick the first expiry >= today so 0DTE stays visible).
+- The happy path could not be verified live from here (see quirks). The
+  fixture field names are cross-checked against Riel's `_rows_to_contracts`,
+  which reads the same v7 JSON through yfinance — **re-verify the happy path
+  on a network Yahoo does not block before trusting the numbers.**
 
-## After that: social (Reddit RSS)
+## Next module: social (Reddit RSS)
 
 Port of `Riel-main/providers/social.py`, minus pytrends. Suggested command:
 `SOCL` (Research).
@@ -139,3 +143,12 @@ is in `Riel-main/widgets/map_widget.py`).
 - **Forex Factory mirror** (`nfs.faireconomy.media`): weekly file, keyless,
   no UA fuss. Impact arrives as labels or colours — both mapped.
 - **NOAA Kp** has shipped two JSON shapes; `parseKp` handles both.
+- **Yahoo blanket-429s this machine's IP** (2026-09-15): every endpoint —
+  `fc.yahoo.com` crumb dance, `/v7/finance/options`, even the normally-open
+  `/v8/finance/chart` — returns `Too Many Requests`, while Space Devs and
+  NOAA answer 200 from the same host. So it is an IP block, not our code or
+  a missing header. `FLOW` therefore shows RATE_LIMITED here; the cookie
+  step itself still works (fc.yahoo.com 404s with a valid `A3` cookie, which
+  is by design). Before assuming a regression, retest from another network —
+  the quickest probe is a plain `fetch` of the v8 chart endpoint; if that 429s
+  too, it is the IP, not the handshake.
