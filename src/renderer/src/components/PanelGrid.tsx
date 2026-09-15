@@ -30,6 +30,7 @@ import AlrtPanel from '../panels/AlrtPanel'
 import MsgPanel from '../panels/MsgPanel'
 import OptPanel from '../panels/OptPanel'
 import FlowPanel from '../panels/FlowPanel'
+import SoclPanel from '../panels/SoclPanel'
 import EcoPanel from '../panels/EcoPanel'
 import GcPanel from '../panels/GcPanel'
 import HmapPanel from '../panels/HmapPanel'
@@ -76,6 +77,8 @@ export function PanelContent({ fn, ticker, index }: { fn: string; ticker: string
       return <InsdPanel />
     case 'WIRE':
       return <WirePanel />
+    case 'SOCL':
+      return <SoclPanel />
     case 'SPACE':
       return <SpacePanel />
     case 'FLT':

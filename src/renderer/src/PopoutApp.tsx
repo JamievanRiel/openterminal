@@ -26,6 +26,7 @@ import HmapPanel from './panels/HmapPanel'
 import FxPanel from './panels/FxPanel'
 import CrypPanel from './panels/CrypPanel'
 import FlowPanel from './panels/FlowPanel'
+import SoclPanel from './panels/SoclPanel'
 import WatchlistPanel from './panels/WatchlistPanel'
 
 const TICKER_FNS = ['DES', 'Q', 'QM', 'GP', 'GIP', 'N', 'FA', 'ERN', 'DVD', 'CACS', 'HP', 'MSG']
@@ -71,6 +72,8 @@ function PopoutContent({ panel, onChart }: { panel: PanelState; onChart: (c: Cha
       return <InsdPanel />
     case 'WIRE':
       return <WirePanel />
+    case 'SOCL':
+      return <SoclPanel />
     case 'SPACE':
       return <SpacePanel />
     case 'FLT':

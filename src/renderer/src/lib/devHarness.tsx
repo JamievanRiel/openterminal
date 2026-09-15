@@ -25,6 +25,7 @@ const PANELS: Array<{ fn: string; ticker: string | null }> = [
   { fn: 'ECAL', ticker: null },
   { fn: 'INSD', ticker: null },
   { fn: 'WIRE', ticker: null },
+  { fn: 'SOCL', ticker: null },
   { fn: 'SPACE', ticker: null },
   { fn: 'FLT', ticker: null },
   { fn: 'MSG', ticker: 'AAPL' },
