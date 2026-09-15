@@ -36,6 +36,16 @@ describe('parseAtomEntries', () => {
     expect(entries[0].summary).toContain('<b>Filed:</b> 2026-08-27')
   })
 
+  it('extracts the category term when a feed carries one', () => {
+    const xml = `<feed><entry><category term="wallstreetbets" label="r/wallstreetbets"/><title>Hot post</title><link href="https://reddit.com/a"/><updated>2026-09-15T10:00:00Z</updated></entry></feed>`
+    expect(parseAtomEntries(xml)[0].category).toBe('wallstreetbets')
+  })
+
+  it('leaves the category undefined when the entry has none', () => {
+    const xml = `<feed><entry><title>No category</title><link href="https://x/a"/><updated>2026-09-15T10:00:00Z</updated></entry></feed>`
+    expect(parseAtomEntries(xml)[0].category).toBeUndefined()
+  })
+
   it('returns [] for non-feed input', () => {
     expect(parseAtomEntries('')).toEqual([])
     expect(parseAtomEntries('<html>not a feed</html>')).toEqual([])

@@ -11,6 +11,8 @@ export interface AtomEntry {
   link: string
   updated: string
   summary: string
+  /** <category term="…"> when the feed carries one (Reddit tags each post's subreddit). */
+  category?: string
 }
 
 const ENTITIES: Record<string, string> = {
@@ -39,11 +41,13 @@ export function parseAtomEntries(xml: string): AtomEntry[] {
   const entries: AtomEntry[] = []
   for (const block of xml.match(/<entry\b[\s\S]*?<\/entry>/g) ?? []) {
     const link = block.match(/<link\b[^>]*href="([^"]*)"/)
+    const category = block.match(/<category\b[^>]*term="([^"]*)"/)
     entries.push({
       title: extractTag(block, 'title'),
       link: link ? decodeEntities(link[1]) : '',
       updated: extractTag(block, 'updated'),
-      summary: extractTag(block, 'summary')
+      summary: extractTag(block, 'summary'),
+      ...(category ? { category: decodeEntities(category[1]) } : {})
     })
   }
   return entries
