@@ -107,7 +107,6 @@ export default function EqsPanel({ ticker }: { ticker: string | null }): JSX.Ele
         setError(new Error(`No saved screen named "${ticker}". Save one first.`))
       }
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker])
 
   const runRefinement = async (): Promise<void> => {

@@ -220,7 +220,6 @@ export default function TerminalChart({ symbol, settings, onSettings, variant, i
       }
       return chart
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [intraday]
   )
 
@@ -603,7 +602,6 @@ export default function TerminalChart({ symbol, settings, onSettings, variant, i
     last.close = compareLive.price
     const pct = engine.compareFirstClose ? (last.close / engine.compareFirstClose - 1) * 100 : 0
     engine.compare.update({ time: last.time as UTCTimestamp, value: pct })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareLive])
 
   // ---------------------------------------------------------------- legend

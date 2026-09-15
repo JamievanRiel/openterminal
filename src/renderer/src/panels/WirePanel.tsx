@@ -55,6 +55,9 @@ export default function WirePanel(): JSX.Element {
       }
     }
     return fresh
+  // Keyed on the fetch on purpose: items is a fresh array every render, so
+  // depending on it would recompute — and blank the new-row flash — every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed.data])
 
   if (feed.isLoading) return <LoadingState label="news wire" />

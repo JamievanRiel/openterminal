@@ -350,7 +350,7 @@ export default function WatchlistPanel(): JSX.Element {
 
       <div className="min-h-0 flex-1 overflow-y-auto" onScroll={(e) => virtual && setScrollTop(e.currentTarget.scrollTop)}>
         {virtual && <div style={{ height: start * ROW_HEIGHT }} />}
-        {visible.map((symbol, i) => {
+        {visible.map((symbol) => {
           const realIndex = symbols.indexOf(symbol)
           return (
             <WatchRow

@@ -46,6 +46,9 @@ export default function InsdPanel(): JSX.Element {
       }
     }
     return fresh
+  // Keyed on the fetch on purpose: filings is a fresh array every render, so
+  // depending on it would recompute — and blank the new-row flash — every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed.data])
 
   if (feed.isLoading) return <LoadingState label="insider filings" />

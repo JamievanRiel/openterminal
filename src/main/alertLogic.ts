@@ -27,8 +27,8 @@ export function evaluateAlertRule(
   if (!rule.enabled) return none
   if (!rule.repeating && rule.fired) return none
 
-  let triggered = false
-  let message = ''
+  let triggered: boolean
+  let message: string
   if (rule.condition === 'above') {
     triggered = price >= rule.value && (prevPrice === undefined || prevPrice < rule.value)
     message = `${rule.symbol} ${price.toFixed(2)} ▲ crossed above ${rule.value.toFixed(2)}`

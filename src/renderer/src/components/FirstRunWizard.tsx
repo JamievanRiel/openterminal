@@ -31,7 +31,7 @@ export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.
           const keepAnyway = window.confirm(
             "Can't reach Finnhub to verify the key right now (no network?). Save it anyway and verify later in SET?"
           )
-          if (!keepAnyway) throw new Error('Key saved but unverified — retry when you are online.')
+          if (!keepAnyway) throw new Error('Key saved but unverified — retry when you are online.', { cause: err })
           return
         }
         throw err

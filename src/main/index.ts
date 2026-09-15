@@ -1,4 +1,5 @@
-import { app, BrowserWindow, Menu, nativeImage, shell, Tray } from 'electron'
+import { app, BrowserWindow, dialog, Menu, nativeImage, powerMonitor, shell, Tray } from 'electron'
+import { writeFileSync } from 'fs'
 import path from 'path'
 import { registerIpc, type IpcServices } from './ipc'
 import { logger } from './logger'
@@ -7,7 +8,7 @@ import { reportCorruptStores, safeStore } from './migrations'
 // Dev-only .env loading, guarded so packaged builds never touch dotenv.
 if (!app.isPackaged) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- optional dev dependency
     require('dotenv').config()
   } catch {
     /* dotenv is optional in dev */
@@ -73,7 +74,8 @@ function syncStreamLifecycle(): void {
   const anyVisible = BrowserWindow.getAllWindows().some(
     (w) => !w.isDestroyed() && w.isVisible() && !w.isMinimized()
   )
-  anyVisible ? services.stream.resume() : services.stream.pause()
+  if (anyVisible) services.stream.resume()
+  else services.stream.pause()
 }
 
 function createWindow(): void {
@@ -127,7 +129,7 @@ function createWindow(): void {
   if (!app.isPackaged && process.env.OT_SHOOT) {
     setTimeout(() => {
       void mainWindow?.webContents.capturePage().then((img) => {
-        require('fs').writeFileSync(process.env.OT_SHOOT as string, img.toPNG())
+        writeFileSync(process.env.OT_SHOOT as string, img.toPNG())
         console.log('[shoot] saved', process.env.OT_SHOOT)
       })
     }, 15_000)
@@ -218,7 +220,6 @@ if (!gotLock) {
     createWindow()
 
     // Laptop sleep kills sockets and freezes timers; recover the moment we wake.
-    const { powerMonitor } = require('electron') as typeof import('electron')
     powerMonitor.on('suspend', () => console.log('[power] system suspend'))
     powerMonitor.on('resume', () => {
       console.log('[power] system resume — recycling stream + refreshing renderers')
@@ -243,7 +244,6 @@ function reportCrash(kind: string, err: unknown): void {
   console.error(`[crash] ${kind}:`, err)
   if (!app.isReady() || Date.now() - lastCrashDialogAt < 60_000) return
   lastCrashDialogAt = Date.now()
-  const { dialog, shell } = require('electron') as typeof import('electron')
   void dialog
     .showMessageBox({
       type: 'error',
