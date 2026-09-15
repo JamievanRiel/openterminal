@@ -22,7 +22,7 @@ imported by the app, never built.
 | Space & Moon (ISS, launches, Kp, moon) | `SPACE` | ✅ merged |
 | Flights / private jets (OpenSky) | `FLT` | ✅ merged |
 | Options flow (Yahoo chain) | `FLOW` | ✅ merged (Yahoo 429s this IP — see quirks) |
-| Social (Reddit RSS) | — | ⏳ next |
+| Social (Reddit RSS) | `SOCL` | ✅ merged |
 | Ships / AIS (aisstream) | — | ⛔ only with a key (see below) |
 | Google Trends (pytrends) | — | ❌ dropped: no official API, fragile |
 | Markets/crypto via yfinance/CoinGecko | — | not ported: OpenTerminal already covers these |
@@ -33,18 +33,19 @@ imported by the app, never built.
   `atom.ts` (Atom + RSS 2.0 + CDATA parser — reuse this, no XML lib!),
   `sentimentCore.ts` (lexicon, aggregate, N/TOP backfill), `wireCore.ts`,
   `moonCore.ts` (mean-synodic, replaces ephem), `spaceCore.ts`,
-  `flightsCore.ts`, `optionsFlowCore.ts`. Each has a sibling `.test.ts`.
+  `flightsCore.ts`, `optionsFlowCore.ts`, `socialCore.ts`. Each has a sibling
+  `.test.ts`.
   `yahooSession.ts` sits alongside them: not pure (it fetches), but it takes
   its `fetch` as a constructor argument, so it is unit-tested all the same.
 - **Thin services** (fetch + `DiskCache` + stale-on-error): `calendar.ts`,
-  `wire.ts`, `space.ts`, `flights.ts`, `optionsFlow.ts`; Form 4 lives on the existing
+  `wire.ts`, `space.ts`, `flights.ts`, `optionsFlow.ts`, `social.ts`; Form 4 lives on the existing
   `EdgarService` (`edgar.ts`) to reuse its contact-UA/throttle/403 plumbing.
 - **Map**: `src/renderer/src/components/WorldMap.tsx` (equirectangular SVG,
   markers with glyph/rotation/tooltip, optional region crop) over the
   committed asset `src/renderer/src/assets/worldLand.ts` (regenerate with
   `node scripts/gen-worldmap.mjs`; Natural Earth, public domain).
 - **Panels**: `EcalPanel`, `InsdPanel`, `WirePanel`, `SpacePanel`, `FltPanel`,
-  `FlowPanel` — routed in `components/PanelGrid.tsx`, `PopoutApp.tsx`, and added to the
+  `FlowPanel`, `SoclPanel` — routed in `components/PanelGrid.tsx`, `PopoutApp.tsx`, and added to the
   leak-harness list in `lib/devHarness.tsx`.
 
 ## The wiring checklist (identical for every module)
@@ -110,21 +111,31 @@ total put vs call volume, ticker-driven with SPY as the tickerless default.
   which reads the same v7 JSON through yfinance — **re-verify the happy path
   on a network Yahoo does not block before trusting the numbers.**
 
-## Next module: social (Reddit RSS)
+## Done: social (`SOCL`)
 
-Port of `Riel-main/providers/social.py`, minus pytrends. Suggested command:
-`SOCL` (Research).
+Ported from `Riel-main/providers/social.py` minus pytrends, with one design
+change forced by measurement — **do not undo it**:
 
-- Feeds: `https://www.reddit.com/r/{sub}/hot/.rss` for wallstreetbets,
-  stocks, investing, CryptoCurrency (limit 8 each). **Descriptive UA
-  required** (Riel used `MiniBloombergTerminal/0.1 (personal-use; …)`) —
-  Reddit 403s default clients; the JSON API is blocked, RSS works.
-- Reuse `parseFeedEntries` from `atom.ts` and `scoreSentiment` from
-  `sentimentCore.ts`. Skip titles containing: "daily discussion", "what are
-  your moves", "daily general discussion".
-- Panel: WirePanel-style stream with subreddit tag + sentiment badge.
+- Riel fetches `/r/{sub}/hot/.rss` once per subreddit. Anonymous Reddit allows
+  roughly **one request per 60-second window per IP**: the response headers say
+  so plainly (`x-ratelimit-remaining` drops to `0.0` after a single call, with
+  `x-ratelimit-reset` counting down from ~60). Four separate requests means
+  three 429s, which is exactly what the first live smoke showed.
+- So all four subs are fetched as ONE **multireddit** feed:
+  `https://www.reddit.com/r/wallstreetbets+stocks+investing+CryptoCurrency/hot/.rss?limit=30`.
+  Reddit merges its own hot ranking across them and tags every entry with
+  `<category term="…">`, which is where each post's subreddit now comes from.
+  `parseAtomEntries` gained an optional `category` field for this; `INSD` and
+  `WIRE` ignore it.
+- The descriptive User-Agent is still mandatory — a request without one 429s
+  immediately, verified both ways.
+- Live-verified end to end: 30 entries → 28 posts (2 megathreads filtered),
+  all four subs present, dates and URLs sound, newest-first ordering correct.
+- Reddit RSS carries **no score and no comment count**, so the panel shows
+  neither rather than inventing them. Riel's `SocialPost.score`/`.comments`
+  were always 0 outside its demo data.
 
-## Ships (only on request)
+## Next module: ships / AIS (only on request)
 
 aisstream.io needs a (free) API key over a websocket — per house rules no
 demo data, so build it only when Jamie adds a key. Wire the key through
@@ -143,6 +154,10 @@ is in `Riel-main/widgets/map_widget.py`).
 - **Forex Factory mirror** (`nfs.faireconomy.media`): weekly file, keyless,
   no UA fuss. Impact arrives as labels or colours — both mapped.
 - **NOAA Kp** has shipped two JSON shapes; `parseKp` handles both.
+- **Reddit anonymous RSS**: ~1 request per 60s window per IP, and the
+  headers say so (`x-ratelimit-remaining`, `x-ratelimit-reset`). Hence the
+  multireddit feed and the 5-min cache. A default User-Agent 429s outright;
+  the JSON API is blocked entirely, RSS is not.
 - **Yahoo blanket-429s this machine's IP** (2026-09-15): every endpoint —
   `fc.yahoo.com` crumb dance, `/v7/finance/options`, even the normally-open
   `/v8/finance/chart` — returns `Too Many Requests`, while Space Devs and
