@@ -24,6 +24,7 @@ export const INVOKE_CHANNELS = [
   'space:get',
   'flights:get',
   'options:flow',
+  'social:get',
   'screener:run',
   'screener:screens',
   'screener:save-screen',

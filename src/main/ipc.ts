@@ -33,6 +33,7 @@ import { WireService } from './wire'
 import { SpaceService } from './space'
 import { FlightService } from './flights'
 import { OptionsFlowService } from './optionsFlow'
+import { SocialService } from './social'
 import { PortfolioManager, portfolioSchema } from './portfolios'
 import { AlertEngine, focusMainWindow } from './alerts'
 import { FredProvider } from './providers/fred'
@@ -197,6 +198,7 @@ export function registerIpc(
   const spaceSvc = new SpaceService()
   const flightSvc = new FlightService()
   const optionsFlowSvc = new OptionsFlowService()
+  const socialSvc = new SocialService()
   const portfolios = new PortfolioManager()
   const fred = new FredProvider(() => keys.getKey('fred'))
   const coingecko = new CoinGeckoProvider(() => keys.getKey('coingecko'))
@@ -411,6 +413,7 @@ export function registerIpc(
   handle('space:get', () => spaceSvc.get())
   handle('flights:get', () => flightSvc.get())
   handle('options:flow', (payload) => optionsFlowSvc.get(symbolSchema.parse(payload).symbol))
+  handle('social:get', () => socialSvc.get())
 
   // --- screener ---
   handle('screener:run', (payload) => fmp.runScreener(screenerFiltersSchema.parse(payload)))

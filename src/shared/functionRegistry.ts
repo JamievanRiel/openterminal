@@ -49,6 +49,7 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('ECAL', 'Economic calendar', "This week's macro events with impact and country filters", 'Research', false, true, 4, 'ECAL'),
   e('INSD', 'Insider filings', 'Live SEC Form 4 stream (EDGAR latest filings)', 'Research', false, true, 4, 'INSD'),
   e('WIRE', 'News wire', 'Keyless RSS wire with lexicon sentiment and bull/bear meter', 'Research', false, true, 4, 'WIRE'),
+  e('SOCL', 'Social stream', 'Reddit hot posts (wallstreetbets, stocks, investing, crypto) with lexicon sentiment', 'Research', false, true, 5, 'SOCL'),
   // Analysis
   e('EQS', 'Equity screener', 'FMP screen + client-side refinement; EQS <name> runs a saved screen', 'Analysis', false, true, 5, 'EQS BIGTECH'),
   e('PORT', 'Portfolio & P&L', 'Positions, live P&L, allocation, vs SPY', 'Analysis', false, true, 5, 'PORT'),
