@@ -316,6 +316,29 @@ export interface FlightsResult {
   fetchedAt: number
 }
 
+export interface OptionFlowContract {
+  contract: string // OCC contract symbol
+  type: 'call' | 'put'
+  strike: number
+  last: number
+  volume: number
+  openInterest: number
+  impliedVol: number // fraction, e.g. 0.34 = 34%
+  unusual: boolean // volume cleared both the OI ratio and the absolute floor
+}
+
+/** Nearest-expiry flow snapshot: totals span the full chain, contracts are the top slice. */
+export interface OptionsFlowResult {
+  symbol: string
+  expiry: string // YYYY-MM-DD (UTC)
+  spot: number | null
+  putCallRatio: number | null // null when no call volume traded
+  totalCallVolume: number
+  totalPutVolume: number
+  contracts: OptionFlowContract[]
+  fetchedAt: number
+}
+
 /** Full Finnhub basic-financials metric record (FA fallback mode). */
 export type MetricRecord = Record<string, number | string | null>
 
