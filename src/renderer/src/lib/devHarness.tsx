@@ -40,6 +40,7 @@ const PANELS: Array<{ fn: string; ticker: string | null }> = [
   { fn: 'FX', ticker: null },
   { fn: 'CRYP', ticker: null },
   { fn: 'OPT', ticker: 'AAPL' },
+  { fn: 'FLOW', ticker: 'AAPL' },
   { fn: 'HELP', ticker: null },
   { fn: 'SET', ticker: null }
 ]

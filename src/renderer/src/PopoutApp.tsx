@@ -25,6 +25,7 @@ import GcPanel from './panels/GcPanel'
 import HmapPanel from './panels/HmapPanel'
 import FxPanel from './panels/FxPanel'
 import CrypPanel from './panels/CrypPanel'
+import FlowPanel from './panels/FlowPanel'
 import WatchlistPanel from './panels/WatchlistPanel'
 
 const TICKER_FNS = ['DES', 'Q', 'QM', 'GP', 'GIP', 'N', 'FA', 'ERN', 'DVD', 'CACS', 'HP', 'MSG']
@@ -74,6 +75,8 @@ function PopoutContent({ panel, onChart }: { panel: PanelState; onChart: (c: Cha
       return <SpacePanel />
     case 'FLT':
       return <FltPanel />
+    case 'FLOW':
+      return <FlowPanel ticker={t} />
     case 'MSG':
       return t ? <MsgPanel ticker={t} /> : <Empty />
     case 'W':

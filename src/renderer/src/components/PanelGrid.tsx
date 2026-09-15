@@ -29,6 +29,7 @@ import PortPanel from '../panels/PortPanel'
 import AlrtPanel from '../panels/AlrtPanel'
 import MsgPanel from '../panels/MsgPanel'
 import OptPanel from '../panels/OptPanel'
+import FlowPanel from '../panels/FlowPanel'
 import EcoPanel from '../panels/EcoPanel'
 import GcPanel from '../panels/GcPanel'
 import HmapPanel from '../panels/HmapPanel'
@@ -99,6 +100,8 @@ export function PanelContent({ fn, ticker, index }: { fn: string; ticker: string
       return ticker ? <MsgPanel ticker={ticker} /> : <PlaceholderPanel fn={fn} />
     case 'OPT':
       return ticker ? <OptPanel ticker={ticker} /> : <PlaceholderPanel fn={fn} />
+    case 'FLOW':
+      return <FlowPanel ticker={ticker} />
     case 'W':
       return <WatchlistPanel />
     case 'WEI':
