@@ -316,6 +316,21 @@ export interface FlightsResult {
   fetchedAt: number
 }
 
+export interface SocialPost {
+  title: string
+  subreddit: string
+  url: string
+  sentiment: number | null // lexicon score −1..1; null when no lexicon hit
+  published: number // epoch ms
+}
+
+/** Reddit RSS gives no score or comment count — the panel says so rather than faking one. */
+export interface SocialResult {
+  posts: SocialPost[]
+  sentiment: { bullish: number; bearish: number; score: number }
+  fetchedAt: number
+}
+
 export interface OptionFlowContract {
   contract: string // OCC contract symbol
   type: 'call' | 'put'
