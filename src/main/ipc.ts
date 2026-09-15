@@ -31,6 +31,7 @@ import { enrichNewsSentiment } from './sentimentCore'
 import { WireService } from './wire'
 import { SpaceService } from './space'
 import { FlightService } from './flights'
+import { OptionsFlowService } from './optionsFlow'
 import { PortfolioManager, portfolioSchema } from './portfolios'
 import { AlertEngine, focusMainWindow } from './alerts'
 import { FredProvider } from './providers/fred'
@@ -194,6 +195,7 @@ export function registerIpc(
   const wireSvc = new WireService()
   const spaceSvc = new SpaceService()
   const flightSvc = new FlightService()
+  const optionsFlowSvc = new OptionsFlowService()
   const portfolios = new PortfolioManager()
   const fred = new FredProvider(() => keys.getKey('fred'))
   const coingecko = new CoinGeckoProvider(() => keys.getKey('coingecko'))
@@ -406,6 +408,7 @@ export function registerIpc(
   handle('wire:get', () => wireSvc.get())
   handle('space:get', () => spaceSvc.get())
   handle('flights:get', () => flightSvc.get())
+  handle('options:flow', (payload) => optionsFlowSvc.get(symbolSchema.parse(payload).symbol))
 
   // --- screener ---
   handle('screener:run', (payload) => fmp.runScreener(screenerFiltersSchema.parse(payload)))

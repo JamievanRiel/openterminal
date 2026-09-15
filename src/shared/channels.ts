@@ -23,6 +23,7 @@ export const INVOKE_CHANNELS = [
   'wire:get',
   'space:get',
   'flights:get',
+  'options:flow',
   'screener:run',
   'screener:screens',
   'screener:save-screen',

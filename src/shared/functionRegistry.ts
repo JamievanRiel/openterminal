@@ -59,6 +59,7 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('FX', 'Currency dashboard', 'Major pairs grid; FX EURUSD opens the chart', 'Analysis', false, true, 5, 'FX EURUSD'),
   e('CRYP', 'Crypto dashboard', 'CoinGecko top 100 with live BTC/ETH', 'Analysis', false, true, 5, 'CRYP'),
   e('OPT', 'Options chain', 'Calls/puts by expiration (needs Polygon key + flag)', 'Analysis', true, true, 6, 'AAPL OPT'),
+  e('FLOW', 'Options flow', 'Nearest-expiry flow: P/C ratio and unusual volume vs open interest; FLOW alone uses SPY', 'Analysis', false, true, 6, 'AAPL FLOW'),
   // Tools
   e('MSG', 'Notes', 'Per-ticker scratchpad, autosaved', 'Tools', true, true, 5, 'AAPL MSG'),
   e('SPACE', 'Space dashboard', 'ISS live position, Kp index, moon phase, upcoming launches', 'Tools', false, true, 5, 'SPACE'),
