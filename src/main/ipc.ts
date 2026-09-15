@@ -1,4 +1,5 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron'
+import { logger } from './logger'
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
 import path from 'path'
@@ -226,7 +227,8 @@ export function registerIpc(
   ipcMain.on('win:toggle-maximize', () => {
     const win = getWindow()
     if (!win) return
-    win.isMaximized() ? win.unmaximize() : win.maximize()
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
   })
   ipcMain.on('win:close', () => getWindow()?.close())
   // Pop-out windows close themselves (win:close targets the main window).
@@ -735,13 +737,11 @@ export function registerIpc(
   })
   handle('logs:open', async () => {
     const { shell } = await import('electron')
-    const { logger } = await import('./logger')
     await shell.openPath(logger.logsDir())
     return true
   })
   handle('diagnostics:export', async (payload) => {
     const p = z.object({ includeTickers: z.boolean().default(true) }).parse(payload)
-    const { logger } = await import('./logger')
     const { map, active } = migrateWorkspaces()
     const workspaceShape = Object.fromEntries(
       Object.entries(map).map(([name, ws]) => [
