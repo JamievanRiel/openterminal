@@ -4,3 +4,10 @@ release/
 .env
 *.tsbuildinfo
 *.log
+
+# Python artefacten (Riel-main port-bron)
+__pycache__/
+*.pyc
+Riel-main/cache/
+Riel-main/:memory:
+Riel-main/=0.2.40
