@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+## v1.1.2 — 2026-09-16
+
+Fixes for two keyless modules, and CI off the deprecated Node 20 runtime.
+
 ### Fixed
 - `FLOW` never loaded data: Yahoo's crumb endpoint refuses `Accept: application/json` with HTTP 406, and every request asked for JSON. The crumb is now requested as plain text. This was hidden behind Yahoo's 429s, which turned out to target non-browser TLS fingerprints rather than IPs — the app itself (Electron) gets through. Live-verified in the running app.
 - `WIRE` showed character codes instead of punctuation — MarketWatch headlines read "a &#x2018;rare win&#x2019;", and hovering a Reuters headline showed `&nbsp;&nbsp;` in the summary. Numeric character references now decode in every feed, and summaries decode their HTML entities after the tags are stripped.
+
+### Internal
+- GitHub Actions moved to their Node 24 majors (`checkout@v7`, `setup-node@v7`, `upload-artifact@v7`, `download-artifact@v8`), and CI builds and tests on Node 22 — Node 20 is end-of-life.
 
 ## v1.1.1 — 2026-09-16
 
