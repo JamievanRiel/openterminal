@@ -5,9 +5,7 @@ release/
 *.tsbuildinfo
 *.log
 
-# Python artefacten (Riel-main port-bron)
+# Riel-main port-bron: lokale kopie van de privé-repo JamievanRiel/Riel, niet in git
+Riel-main/
 __pycache__/
 *.pyc
-Riel-main/cache/
-Riel-main/:memory:
-Riel-main/=0.2.40

@@ -8,9 +8,12 @@ read it (plus the workflow section below) before starting the next module.*
 `Riel-main/` in the repo root is a Python/PySide6 reference app ("Mini
 Bloomberg Terminal") whose keyless data modules are being ported, one by one,
 into OpenTerminal as native TypeScript. Decision history and the phase-1 spec:
-`docs/superpowers/specs/2026-08-27-ecal-insd-design.md`. `Riel-main/` is
-vendored in the repo (commit 5622ad2) as a read-only port reference — never
-imported by the app, never built.
+`docs/superpowers/specs/2026-08-27-ecal-insd-design.md`. `Riel-main/` is a
+**local, git-ignored** copy of Jamie's private repo `JamievanRiel/Riel` — a
+read-only port reference, never imported by the app, never built. It was
+vendored into git once, then removed from the entire history (2026-09-16)
+before the repo could go public; if it is missing on a machine, download the
+`main` branch of `JamievanRiel/Riel` into `Riel-main/`.
 
 ## Status
 
