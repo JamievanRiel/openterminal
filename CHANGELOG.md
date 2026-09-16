@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- `WIRE` showed character codes instead of punctuation — MarketWatch headlines read "a &#x2018;rare win&#x2019;", and hovering a Reuters headline showed `&nbsp;&nbsp;` in the summary. Numeric character references now decode in every feed, and summaries decode their HTML entities after the tags are stripped.
+
 ## v1.1.1 — 2026-09-16
 
 Make it easy to start: downloadable installers, and a first run that works without any API key.

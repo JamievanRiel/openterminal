@@ -59,6 +59,18 @@ describe('normalizeWire', () => {
     expect(items[0].published).toBe(NOW)
   })
 
+  it('decodes the HTML entities left in a summary once its tags are stripped (Google News)', () => {
+    const summary = '<a href="https://news.google.com/x">Oil slips as Saudi offers more crude</a>&nbsp;&nbsp;<font color="#6f6f6f">Reuters</font>'
+    const [item] = normalizeWire([{ source: 'Reuters US', category: 'markets', entries: [entry({ summary })] }], NOW)
+    expect(item.summary).toBe('Oil slips as Saudi offers more crude Reuters')
+  })
+
+  it('decodes escaped text after stripping, so an escaped tag survives as text', () => {
+    const summary = 'S&amp;P 500 &#x2014; a &lt;b&gt; in the copy'
+    const [item] = normalizeWire([{ source: 'A', category: 'markets', entries: [entry({ summary })] }], NOW)
+    expect(item.summary).toBe('S&P 500 — a <b> in the copy')
+  })
+
   it('caps the summary at 600 characters', () => {
     const [item] = normalizeWire([{ source: 'A', category: 'markets', entries: [entry({ summary: 'x'.repeat(900) })] }], NOW)
     expect(item.summary).toHaveLength(600)

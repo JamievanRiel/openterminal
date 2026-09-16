@@ -1,5 +1,5 @@
 import type { WireItem } from '../shared/types'
-import type { AtomEntry } from './atom'
+import { decodeEntities, type AtomEntry } from './atom'
 import { scoreSentiment } from './sentimentCore'
 
 const SUMMARY_CAP = 600
@@ -13,7 +13,8 @@ function stripHtml(text: string): string {
     else if (ch === '>') inTag = false
     else if (!inTag) out += ch
   }
-  return out.trim()
+  // Entities decode only after the tags are gone, so escaped markup stays text.
+  return decodeEntities(out).replace(/\s+/g, ' ').trim()
 }
 
 export interface FeedResult {
