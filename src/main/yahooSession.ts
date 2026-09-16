@@ -40,8 +40,8 @@ export class YahooSession {
     return `${url}${url.includes('?') ? '&' : '?'}crumb=${encodeURIComponent(this.crumb)}`
   }
 
-  private async get(url: string): Promise<Response> {
-    const headers: Record<string, string> = { 'User-Agent': UA, Accept: 'application/json' }
+  private async get(url: string, accept = 'application/json'): Promise<Response> {
+    const headers: Record<string, string> = { 'User-Agent': UA, Accept: accept }
     if (this.jar) headers.Cookie = this.jar
     try {
       return await this.fetchImpl(url, { headers })
@@ -53,14 +53,15 @@ export class YahooSession {
   private async handshake(): Promise<void> {
     this.crumb = ''
     // fc.yahoo.com answers 404 by design — only its Set-Cookie header matters.
-    const cookieRes = await this.get(COOKIE_URL)
+    const cookieRes = await this.get(COOKIE_URL, '*/*')
     const jar = cookieRes.headers
       .getSetCookie()
       .map((c) => c.split(';')[0])
       .filter(Boolean)
       .join('; ')
     if (jar) this.jar = jar
-    const crumbRes = await this.get(CRUMB_URL)
+    // getcrumb answers text/plain and refuses Accept: application/json with a 406.
+    const crumbRes = await this.get(CRUMB_URL, '*/*')
     const classified = classifyStatus('Yahoo', crumbRes.status, THROTTLE_BACKOFF_MS)
     if (classified) throw classified
     const crumb = (await crumbRes.text()).trim()

@@ -51,6 +51,22 @@ describe('YahooSession', () => {
     expect(calls[2].headers['User-Agent']).toMatch(/Mozilla/)
   })
 
+  it('asks for the crumb as plain text — getcrumb answers 406 to Accept: application/json', async () => {
+    // Behaves like Yahoo did live (2026-09-16): content negotiation on the crumb endpoint.
+    const yahoo = ((url: string, init?: { headers?: Record<string, string> }): Promise<Response> => {
+      const accept = init?.headers?.Accept ?? '*/*'
+      if (url === 'https://fc.yahoo.com') return Promise.resolve(cookieRes())
+      if (url.includes('/v1/test/getcrumb')) {
+        return Promise.resolve(accept.includes('application/json') ? new Response('{"finance":{"error":{}}}', { status: 406 }) : crumbRes())
+      }
+      return Promise.resolve(jsonRes({ optionChain: { result: [] } }))
+    }) as unknown as typeof fetch
+
+    await expect(new YahooSession(yahoo).fetchJson('https://query2.finance.yahoo.com/v7/finance/options/SPY')).resolves.toEqual({
+      optionChain: { result: [] }
+    })
+  })
+
   it('reuses the crumb on a second request instead of repeating the handshake', async () => {
     const { fetch, calls } = stubFetch([cookieRes(), crumbRes(), jsonRes({ n: 1 }), jsonRes({ n: 2 })])
     const session = new YahooSession(fetch)
