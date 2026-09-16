@@ -91,7 +91,7 @@ The renderer makes **zero** third-party network requests; API keys never leave t
 
 ## Building from source
 
-Needs Node 20+ and git.
+Needs Node 22+ and git.
 
 ```bash
 git clone https://github.com/JamievanRiel/openterminal.git
