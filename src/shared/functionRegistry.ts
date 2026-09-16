@@ -14,6 +14,8 @@ export interface FnEntry {
   implemented: boolean
   phase: number
   example: string
+  /** Loads its data from public sources with no API key — works on a fresh install. */
+  keyless: boolean
 }
 
 const e = (
@@ -24,8 +26,9 @@ const e = (
   needsTicker: boolean,
   implemented: boolean,
   phase: number,
-  example: string
-): FnEntry => ({ code, name, description, category, needsTicker, implemented, phase, example })
+  example: string,
+  keyless = false
+): FnEntry => ({ code, name, description, category, needsTicker, implemented, phase, example, keyless })
 
 export const FUNCTION_REGISTRY: FnEntry[] = [
   // Market Data
@@ -46,10 +49,10 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('DVD', 'Dividends', 'Payment history, yield and cut flags', 'Research', true, true, 4, 'KO DVD'),
   e('CACS', 'SEC filings', 'EDGAR filings with form-type filters', 'Research', true, true, 4, 'AAPL CACS'),
   e('HP', 'Historical prices', 'OHLCV table with CSV export', 'Research', true, true, 4, 'AAPL HP'),
-  e('ECAL', 'Economic calendar', "This week's macro events with impact and country filters", 'Research', false, true, 4, 'ECAL'),
+  e('ECAL', 'Economic calendar', "This week's macro events with impact and country filters", 'Research', false, true, 4, 'ECAL', true),
   e('INSD', 'Insider filings', 'Live SEC Form 4 stream (EDGAR latest filings)', 'Research', false, true, 4, 'INSD'),
-  e('WIRE', 'News wire', 'Keyless RSS wire with lexicon sentiment and bull/bear meter', 'Research', false, true, 4, 'WIRE'),
-  e('SOCL', 'Social stream', 'Reddit hot posts (wallstreetbets, stocks, investing, crypto) with lexicon sentiment', 'Research', false, true, 5, 'SOCL'),
+  e('WIRE', 'News wire', 'Keyless RSS wire with lexicon sentiment and bull/bear meter', 'Research', false, true, 4, 'WIRE', true),
+  e('SOCL', 'Social stream', 'Reddit hot posts (wallstreetbets, stocks, investing, crypto) with lexicon sentiment', 'Research', false, true, 5, 'SOCL', true),
   // Analysis
   e('EQS', 'Equity screener', 'FMP screen + client-side refinement; EQS <name> runs a saved screen', 'Analysis', false, true, 5, 'EQS BIGTECH'),
   e('PORT', 'Portfolio & P&L', 'Positions, live P&L, allocation, vs SPY', 'Analysis', false, true, 5, 'PORT'),
@@ -58,17 +61,19 @@ export const FUNCTION_REGISTRY: FnEntry[] = [
   e('GC', 'Yield curve', 'US Treasury curve: latest vs 1M vs 1Y ago', 'Analysis', false, true, 5, 'GC'),
   e('HMAP', 'Sector heatmap', 'Live sector treemap with drill-down', 'Analysis', false, true, 5, 'HMAP'),
   e('FX', 'Currency dashboard', 'Major pairs grid; FX EURUSD opens the chart', 'Analysis', false, true, 5, 'FX EURUSD'),
-  e('CRYP', 'Crypto dashboard', 'CoinGecko top 100 with live BTC/ETH', 'Analysis', false, true, 5, 'CRYP'),
+  e('CRYP', 'Crypto dashboard', 'CoinGecko top 100 with live BTC/ETH', 'Analysis', false, true, 5, 'CRYP', true),
   e('OPT', 'Options chain', 'Calls/puts by expiration (needs Polygon key + flag)', 'Analysis', true, true, 6, 'AAPL OPT'),
-  e('FLOW', 'Options flow', 'Nearest-expiry flow: P/C ratio and unusual volume vs open interest; FLOW alone uses SPY', 'Analysis', false, true, 6, 'AAPL FLOW'),
+  e('FLOW', 'Options flow', 'Nearest-expiry flow: P/C ratio and unusual volume vs open interest; FLOW alone uses SPY', 'Analysis', false, true, 6, 'AAPL FLOW', true),
   // Tools
   e('MSG', 'Notes', 'Per-ticker scratchpad, autosaved', 'Tools', true, true, 5, 'AAPL MSG'),
-  e('SPACE', 'Space dashboard', 'ISS live position, Kp index, moon phase, upcoming launches', 'Tools', false, true, 5, 'SPACE'),
-  e('FLT', 'Flight board', 'Live US airspace via OpenSky — jets first (anon, 10m poll)', 'Tools', false, true, 5, 'FLT'),
+  e('SPACE', 'Space dashboard', 'ISS live position, Kp index, moon phase, upcoming launches', 'Tools', false, true, 5, 'SPACE', true),
+  e('FLT', 'Flight board', 'Live US airspace via OpenSky — jets first (anon, 10m poll)', 'Tools', false, true, 5, 'FLT', true),
   e('SET', 'Settings', 'API keys, providers, behavior, appearance', 'Tools', false, true, 1, 'SET'),
   e('HELP', 'Function reference', 'This reference', 'Tools', false, true, 1, 'HELP'),
   e('WS', 'Workspaces', 'WS <name> switch · WS SAVE/DELETE <name> · WS LIST', 'Tools', false, true, 5, 'WS TRADING')
 ]
+
+export const KEYLESS_FUNCTIONS = FUNCTION_REGISTRY.filter((f) => f.keyless)
 
 export const GLOBAL_SHORTCUTS: Array<[string, string]> = [
   ['/ or Ctrl+K', 'Focus the command line'],

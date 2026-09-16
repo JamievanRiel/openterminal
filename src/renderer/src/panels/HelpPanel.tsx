@@ -30,7 +30,9 @@ export default function HelpPanel(): JSX.Element {
           autoFocus
           className="w-48 border border-term-border bg-term-bg px-2 py-0.5 text-[11px] uppercase text-term-amber placeholder-term-dim outline-none focus:border-term-amber"
         />
-        <span className="ml-auto text-[8px] uppercase text-term-dim">click an entry → command line</span>
+        <span className="ml-auto text-[8px] uppercase text-term-dim">
+          <span className="text-term-up">no key</span> = works without API keys · click an entry → command line
+        </span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {CATEGORIES.map((cat) => {
@@ -47,7 +49,17 @@ export default function HelpPanel(): JSX.Element {
                   title={`Insert "${f.example}" into the command line`}
                 >
                   <span className="text-[12px] font-bold text-term-amber">{f.code}</span>
-                  <span className="text-[11px] text-term-text">{f.name}</span>
+                  <span className="text-[11px] text-term-text">
+                    {f.name}
+                    {f.keyless && (
+                      <span
+                        className="ml-1.5 border border-term-up px-1 text-[8px] uppercase text-term-up"
+                        title="Works without any API key"
+                      >
+                        no key
+                      </span>
+                    )}
+                  </span>
                   <span className="truncate text-[10px] text-term-dim">{f.description}</span>
                   <span className="text-right text-[10px] text-term-amberDim">{f.example}</span>
                 </button>
