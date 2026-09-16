@@ -1,6 +1,6 @@
 # Riel-main → OpenTerminal port — status & continuation guide
 
-*Last updated: 2026-09-15. This is the handoff doc for continuing the port —
+*Last updated: 2026-09-16. This is the handoff doc for continuing the port —
 read it (plus the workflow section below) before starting the next module.*
 
 ## Context
@@ -21,7 +21,7 @@ imported by the app, never built.
 | News / sentiment (RSS + lexicon) | `WIRE` (+ badge backfill in `N`/`TOP`) | ✅ merged |
 | Space & Moon (ISS, launches, Kp, moon) | `SPACE` | ✅ merged |
 | Flights / private jets (OpenSky) | `FLT` | ✅ merged |
-| Options flow (Yahoo chain) | `FLOW` | ✅ merged (Yahoo 429s this IP — see quirks) |
+| Options flow (Yahoo chain) | `FLOW` | ✅ merged, live-verified 2026-09-16 (see quirks) |
 | Social (Reddit RSS) | `SOCL` | ✅ merged |
 | Ships / AIS (aisstream) | — | ⛔ only with a key (see below) |
 | Google Trends (pytrends) | — | ❌ dropped: no official API, fragile |
@@ -106,10 +106,14 @@ total put vs call volume, ticker-driven with SPY as the tickerless default.
   Yahoo block ever becomes permanent, that is the drop-in replacement: the
   panel and types stay, only a new core parser is needed (OCC symbol carries
   expiry/type/strike; pick the first expiry >= today so 0DTE stays visible).
-- The happy path could not be verified live from here (see quirks). The
-  fixture field names are cross-checked against Riel's `_rows_to_contracts`,
-  which reads the same v7 JSON through yfinance — **re-verify the happy path
-  on a network Yahoo does not block before trusting the numbers.**
+- Live-verified 2026-09-16 under Electron's runtime (SPY/AAPL/TSLA): field
+  names match the fixtures, 0 malformed rows, P/C and totals sane, and the
+  real app's panel renders the chain. Getting there exposed a real bug the
+  429 had hidden: the crumb request sent `Accept: application/json`, which
+  `getcrumb` refuses with a **406** — it now asks with `*/*`.
+- Observation, not changed: the nearest expiry is usually 0DTE, where intraday
+  volume nearly always exceeds yesterday's open interest, so most top rows get
+  the UNUSUAL badge. Riel's thresholds; revisit only if Jamie wants.
 
 ## Done: social (`SOCL`)
 
@@ -158,12 +162,13 @@ is in `Riel-main/widgets/map_widget.py`).
   headers say so (`x-ratelimit-remaining`, `x-ratelimit-reset`). Hence the
   multireddit feed and the 5-min cache. A default User-Agent 429s outright;
   the JSON API is blocked entirely, RSS is not.
-- **Yahoo blanket-429s this machine's IP** (2026-09-15): every endpoint —
-  `fc.yahoo.com` crumb dance, `/v7/finance/options`, even the normally-open
-  `/v8/finance/chart` — returns `Too Many Requests`, while Space Devs and
-  NOAA answer 200 from the same host. So it is an IP block, not our code or
-  a missing header. `FLOW` therefore shows RATE_LIMITED here; the cookie
-  step itself still works (fc.yahoo.com 404s with a valid `A3` cookie, which
-  is by design). Before assuming a regression, retest from another network —
-  the quickest probe is a plain `fetch` of the v8 chart endpoint; if that 429s
-  too, it is the IP, not the handshake.
+- **Yahoo blocks by TLS fingerprint, not by IP** (corrected 2026-09-16; the
+  earlier "IP block" note was wrong). At the same moment from the same host:
+  `curl` → 429, standalone Node (OpenSSL) → 429, GitHub Actions runners on all
+  three OSes → 429, but **Electron's Node (BoringSSL) → 200**. The app runs
+  its fetches inside Electron, so it gets through. Consequence for testing:
+  a live smoke against Yahoo must run under Electron's runtime —
+  `ELECTRON_RUN_AS_NODE=1 ./node_modules/electron/dist/electron node_modules/vitest/vitest.mjs run src/main/<x>.live.test.ts`
+  — plain `npx vitest` will always see 429.
+- **Yahoo `getcrumb` negotiates content**: it answers `text/plain` and returns
+  406 to `Accept: application/json`. Data endpoints are fine with JSON.
