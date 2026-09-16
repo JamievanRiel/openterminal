@@ -1,8 +1,16 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { KEYLESS_FUNCTIONS } from '../../../shared/functionRegistry'
 import { invoke } from '../lib/ipc'
 
-export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.Element {
+interface Props {
+  /** A Finnhub key was saved. */
+  onDone: () => void
+  /** Continue without a key, optionally straight into one of the keyless functions. */
+  onSkip: (fn: string | null) => void
+}
+
+export default function FirstRunWizard({ onDone, onSkip }: Props): JSX.Element {
   const [key, setKey] = useState('')
   const [error, setError] = useState('')
 
@@ -72,7 +80,7 @@ export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.
         <div className="mt-4 flex items-center justify-between">
           <button
             className="font-mono text-[10px] uppercase text-term-dim hover:text-term-text"
-            onClick={onDone}
+            onClick={() => onSkip(null)}
           >
             Skip for now
           </button>
@@ -83,6 +91,23 @@ export default function FirstRunWizard({ onDone }: { onDone: () => void }): JSX.
           >
             {save.isPending ? 'Validating…' : 'Validate & save'}
           </button>
+        </div>
+        <div className="mt-5 border-t border-term-border pt-3">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-term-dim">
+            No key yet? These work without one:
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {KEYLESS_FUNCTIONS.map((f) => (
+              <button
+                key={f.code}
+                onClick={() => onSkip(f.code)}
+                title={`${f.name} — ${f.description}`}
+                className="border border-term-border px-2 py-0.5 font-mono text-[11px] text-term-amber hover:border-term-amber"
+              >
+                {f.code}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

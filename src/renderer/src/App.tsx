@@ -12,7 +12,8 @@ import FirstRunWizard from './components/FirstRunWizard'
 
 export default function App(): JSX.Element {
   const queryClient = useQueryClient()
-  const [skippedWizard, setSkippedWizard] = useState(false)
+  // Skipping is remembered: someone using only the keyless functions shouldn't meet the wizard every launch.
+  const [skippedWizard, setSkippedWizard] = useState(() => window.localStorage.getItem('wizard-skipped') === '1')
   const hydrated = useWorkspace((s) => s.hydrated)
   const hydrate = useWorkspace((s) => s.hydrate)
 
@@ -65,6 +66,14 @@ export default function App(): JSX.Element {
     return undefined
   }, [])
 
+  // Open a function in the first empty panel so HELP stays in view next to it.
+  const setActive = useWorkspace((s) => s.setActive)
+  const openBeside = (fn: string): void => {
+    const empty = useWorkspace.getState().panels.findIndex((p) => p.fn === 'EMPTY')
+    if (empty >= 0) setActive(empty)
+    applyCommand(fn, null, false)
+  }
+
   const keyStatus = useQuery({
     queryKey: ['key-status'],
     queryFn: () => invoke<KeyStatus[]>('keys:status')
@@ -85,6 +94,11 @@ export default function App(): JSX.Element {
           onDone={() => {
             setSkippedWizard(true)
             void queryClient.invalidateQueries({ queryKey: ['key-status'] })
+          }}
+          onSkip={(fn) => {
+            window.localStorage.setItem('wizard-skipped', '1')
+            setSkippedWizard(true)
+            if (fn) openBeside(fn)
           }}
         />
       ) : (
