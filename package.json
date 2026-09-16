@@ -1,7 +1,7 @@
 {
   "name": "openterminal",
-  "version": "1.1.0",
-  "description": "OpenTerminal \u2014 keyboard-first, multi-panel market terminal (Bloomberg-style)",
+  "version": "1.1.1",
+  "description": "OpenTerminal — keyboard-first, multi-panel market terminal (Bloomberg-style)",
   "main": "./out/main/index.js",
   "author": {
     "name": "OpenTerminal contributors",

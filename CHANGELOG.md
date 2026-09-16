@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v1.1.1 — 2026-09-16
+
+Make it easy to start: downloadable installers, and a first run that works without any API key.
+
 ### Added
 - Installers are now downloadable: tagging `v*` publishes a GitHub Release with the Windows, macOS and Linux installers attached, notes taken from `docs/RELEASE-<version>.md`.
 - First run without a key: the welcome screen lists the functions that work with no API key (`WIRE`, `ECAL`, `SOCL`, `CRYP`, `FLOW`, `SPACE`, `FLT`) as one-click starts, and `HELP` tags them **NO KEY** (a new `keyless` flag in the function registry).
