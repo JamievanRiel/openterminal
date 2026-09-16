@@ -20,12 +20,20 @@ const ENTITIES: Record<string, string> = {
   '&lt;': '<',
   '&gt;': '>',
   '&quot;': '"',
-  '&#39;': "'",
   '&apos;': "'"
 }
 
+/**
+ * The five XML entities plus numeric character references (`&#x2019;`, `&#169;`),
+ * which MarketWatch uses for every curly quote and dash. One pass, so an
+ * escaped `&amp;#x2019;` stays literal text. Invalid code points are left as-is.
+ */
 function decodeEntities(text: string): string {
-  return text.replace(/&(?:amp|lt|gt|quot|#39|apos);/g, (m) => ENTITIES[m] ?? m)
+  return text.replace(/&(?:amp|lt|gt|quot|apos|#(\d+)|#x([0-9a-fA-F]+));/g, (m, dec?: string, hex?: string) => {
+    if (dec === undefined && hex === undefined) return ENTITIES[m] ?? m
+    const code = dec !== undefined ? Number.parseInt(dec, 10) : Number.parseInt(hex as string, 16)
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m
+  })
 }
 
 /** Inner text of the first <name>…</name> in the block, CDATA unwrapped, entities decoded. */

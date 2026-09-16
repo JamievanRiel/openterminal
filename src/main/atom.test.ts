@@ -85,6 +85,21 @@ describe('parseFeedEntries', () => {
     expect(parseFeedEntries(FEED)).toEqual(parseAtomEntries(FEED))
   })
 
+  it('decodes numeric character references, hex and decimal (MarketWatch titles)', () => {
+    const xml = `<rss><channel><item><title>Why a hike could be a &#x2018;rare win&#x2019; &#x2014; &#169; 2026</title><link>https://x/a</link></item></channel></rss>`
+    expect(parseFeedEntries(xml)[0].title).toBe('Why a hike could be a \u2018rare win\u2019 \u2014 \u00a9 2026')
+  })
+
+  it('decodes in a single pass, so an escaped reference stays literal text', () => {
+    const xml = `<rss><channel><item><title>&amp;#x2019; and &amp;amp;</title><link>https://x/a</link></item></channel></rss>`
+    expect(parseFeedEntries(xml)[0].title).toBe('&#x2019; and &amp;')
+  })
+
+  it('leaves references to invalid code points untouched', () => {
+    const xml = `<rss><channel><item><title>bad &#x110000; ref</title><link>https://x/a</link></item></channel></rss>`
+    expect(parseFeedEntries(xml)[0].title).toBe('bad &#x110000; ref')
+  })
+
   it('returns [] for non-feed input', () => {
     expect(parseFeedEntries('<html>nope</html>')).toEqual([])
   })
