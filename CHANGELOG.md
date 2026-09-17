@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Security
+- `js-yaml` 4.3.1 → 4.3.2 (GHSA-2883-xcg3-v3hh, used by `electron-updater`); the production dependencies have no known advisories again.
+
+### Internal
+- Repository prepared for public release: README restructured (badges, contents, design decisions, security model, tests), `SECURITY.md` with private vulnerability reporting.
+- CI also runs `npm run lint`.
+
 ## v1.1.2 — 2026-09-16
 
 Fixes for two keyless modules, and CI off the deprecated Node 20 runtime.

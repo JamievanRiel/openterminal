@@ -4,7 +4,7 @@
   "description": "OpenTerminal — keyboard-first, multi-panel market terminal (Bloomberg-style)",
   "main": "./out/main/index.js",
   "author": {
-    "name": "OpenTerminal contributors",
+    "name": "Jamie",
     "email": "102923504+JamievanRiel@users.noreply.github.com"
   },
   "homepage": "https://github.com/JamievanRiel/openterminal",
